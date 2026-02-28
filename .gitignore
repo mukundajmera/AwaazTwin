@@ -6,3 +6,11 @@ dist/
 *.tsbuildinfo
 test-results/
 playwright-report/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+.data/

@@ -1,0 +1,9 @@
+# AwaazTwin Backend Dependencies
+# Python 3.11+
+
+# -- Queue / workers --
+celery[redis]>=5.3,<6
+
+# -- Testing --
+pytest>=8.0,<9
+pytest-cov>=5.0,<6
