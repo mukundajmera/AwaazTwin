@@ -1,0 +1,46 @@
+---
+title: "Audio Preprocessing Workflows"
+summary: "End-to-end guide to preprocessing audio for voice cloning and TTS pipelines."
+difficulty: beginner
+tags: ["guides", "audio", "preprocessing"]
+relatedTopics: ["voice-cloning/noise-reduction", "voice-cloning/getting-started"]
+updatedAt: "2025-02-01T10:00:00Z"
+---
+
+## Why Preprocessing Matters
+
+Raw audio recordings almost always contain artifacts that degrade voice cloning and TTS quality. Preprocessing transforms raw audio into a clean, normalized signal that models can learn from effectively. Skipping this step is the most common cause of poor clone quality in beginner workflows.
+
+## The Preprocessing Pipeline
+
+### Step 1: Format Conversion
+
+Ensure all audio is in a consistent format. AwaazTwin expects WAV files at 22050 Hz sample rate, 16-bit depth, mono channel. The portal automatically converts uploaded files, but understanding the target format helps when troubleshooting quality issues.
+
+### Step 2: Silence Trimming
+
+Remove leading and trailing silence from recordings. Long silences waste processing time and can confuse models. AwaazTwin uses energy-based voice activity detection to automatically trim silence to 200ms padding on each end.
+
+### Step 3: Volume Normalization
+
+Normalize the audio to a consistent peak level (typically -1 dBFS). This ensures the model sees consistent amplitude patterns regardless of the original recording volume. Peak normalization is preferred over loudness normalization for voice cloning inputs.
+
+### Step 4: Noise Reduction
+
+Apply spectral gating or adaptive filtering to remove background noise. See the dedicated Noise Reduction guide for detailed techniques and trade-offs.
+
+### Step 5: Quality Validation
+
+After preprocessing, validate the output: check the signal-to-noise ratio (target >20 dB), verify speech is still natural-sounding, and ensure no clipping or distortion was introduced.
+
+## Common Pitfalls
+
+- **Over-normalizing**: Applying both peak and loudness normalization can squash dynamic range, making speech sound flat.
+- **Wrong sample rate**: Resampling without proper anti-aliasing filters introduces high-frequency artifacts.
+- **Skipping validation**: Always listen to preprocessed audio before feeding it to models.
+
+## Follow-Up Topics
+
+- How to build an automated preprocessing pipeline for batch uploads?
+- What objective metrics indicate "good enough" preprocessing quality?
+- How does preprocessing differ for fine-tuning vs zero-shot cloning?

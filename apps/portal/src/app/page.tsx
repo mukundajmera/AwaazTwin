@@ -60,7 +60,19 @@ export default function HomePage() {
         ))}
       </div>
 
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Link
+          href="/practice"
+          className="block p-6 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all"
+        >
+          <div className="text-2xl mb-2">🎯</div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">
+            Practice
+          </h2>
+          <p className="text-sm text-gray-500">
+            Guided practice sessions with self-scoring rubrics
+          </p>
+        </Link>
         <Link
           href="/settings"
           className="block p-6 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all"

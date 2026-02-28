@@ -74,12 +74,12 @@
 - [ ] Set up CI/CD pipeline (GitHub Actions)
 
 ### Phase 4 – Content & Practice Flows
-- [ ] Create content for all sections (Voice Cloning Guides, TTS Tutorials, Model Selection, Audio Processing Workflows, etc.)
-- [ ] Implement PracticeTemplate and PracticeSession components
-- [ ] Implement practice / interview mode UI with timed phases
-- [ ] Implement self-scoring with rubric sliders
-- [ ] Wire practice session persistence
-- [ ] Add tests for practice flows (unit, integration, E2E)
+- [x] Create content for all sections (Voice Cloning Guides, TTS Tutorials, Model Selection, Audio Processing Workflows, etc.)
+- [x] Implement PracticeTemplate and PracticeSession components
+- [x] Implement practice / interview mode UI with timed phases
+- [x] Implement self-scoring with rubric sliders
+- [x] Wire practice session persistence
+- [x] Add tests for practice flows (unit, integration, E2E)
 
 ### Phase 5 – Real Integration & UAT
 - [ ] Replace LLM stubs with real Ollama/llama-server client

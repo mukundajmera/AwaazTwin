@@ -42,6 +42,5 @@ export const testSuites: TestSuiteDefinition[] = [
     command: "npx playwright test e2e/practice-flow.spec.ts",
     estimatedDuration: "~30s",
     requiresExternalServices: false,
-    comingSoon: true,
   },
 ];

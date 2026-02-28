@@ -12,6 +12,7 @@ const sections = [
 ];
 
 const utilityLinks = [
+  { label: "Practice", href: "/practice", icon: "🎯" },
   { label: "Settings", href: "/settings", icon: "⚙️" },
   { label: "Test Console", href: "/tests", icon: "🧪" },
 ];
