@@ -71,6 +71,44 @@ export interface TestRun {
   logs: string;
 }
 
+// Practice
+export type PracticeCategory = "voice-cloning" | "tts-pipeline" | "architecture";
+
+export interface PracticePhase {
+  id: string;
+  name: string;
+  description: string;
+  durationMinutes: number;
+}
+
+export interface RubricItem {
+  id: string;
+  label: string;
+  description: string;
+  maxScore: number;
+}
+
+export interface PracticeTemplate {
+  id: string;
+  title: string;
+  category: PracticeCategory;
+  difficulty: "beginner" | "intermediate" | "advanced";
+  summary: string;
+  phases: PracticePhase[];
+  rubric: RubricItem[];
+}
+
+export interface PracticeSession {
+  id: string;
+  templateId: string;
+  startedAt: string;
+  completedAt: string | null;
+  currentPhaseIndex: number;
+  scores: Record<string, number>;
+  notes: string;
+  status: "in-progress" | "completed";
+}
+
 // App Settings
 export interface AppSettings {
   activeLLMProfileId: string | null;

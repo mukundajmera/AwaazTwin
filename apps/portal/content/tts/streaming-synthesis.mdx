@@ -1,0 +1,47 @@
+---
+title: "Streaming TTS Synthesis"
+summary: "Design and implement streaming text-to-speech synthesis for low-latency audio output."
+difficulty: intermediate
+tags: ["tts", "streaming", "latency"]
+relatedTopics: ["tts/coqui-setup", "models/xtts-v2"]
+updatedAt: "2025-02-01T10:00:00Z"
+---
+
+## Overview
+
+Streaming synthesis allows text-to-speech systems to begin playing audio before the entire utterance is generated. This dramatically reduces perceived latency, which is critical for interactive applications. Instead of waiting for the full audio file, the client receives chunks and plays them progressively.
+
+## Architecture
+
+### Chunked Generation
+
+The TTS model processes text in segments (typically sentence-level or fixed-length chunks). Each chunk is synthesized independently and streamed to the client as it becomes available. The challenge is maintaining smooth transitions between chunks — crossfading and careful alignment of prosody at boundaries are essential.
+
+### Server-Sent Events vs WebSocket
+
+AwaazTwin supports streaming via Server-Sent Events (SSE) for simplicity. The client sends a synthesis request, and the server responds with a stream of audio chunks encoded as base64 in SSE messages. WebSocket is an alternative that enables bidirectional communication but adds complexity.
+
+## Rubric: Evaluating Streaming TTS
+
+| Criterion | Weak (1) | Adequate (3) | Strong (5) |
+|---|---|---|---|
+| **Time to first audio** | >5s on CPU | 2–5s on CPU | <2s on CPU |
+| **Chunk transitions** | Audible gaps or clicks | Minor artifacts at boundaries | Seamless, natural flow |
+| **Error handling** | Silent failure on network issues | Retry with delay | Graceful degradation with user feedback |
+| **Resource usage** | Memory spikes, unbounded buffers | Reasonable limits | Efficient streaming with backpressure |
+
+## Strong Answer Outline
+
+A strong streaming TTS design should cover: (1) chunk boundary selection (sentence-level vs fixed-size), (2) crossfading strategy for smooth transitions, (3) client-side buffering and playback scheduling, (4) error recovery and reconnection, and (5) backpressure handling when the client consumes slower than the server produces.
+
+## Common Pitfalls
+
+- **Ignoring prosody at boundaries**: Splitting text at arbitrary points can create unnatural pauses or tonal shifts. Split at sentence or clause boundaries.
+- **No client buffering**: Playing each chunk immediately as received can cause stuttering if network or synthesis has variable latency. Buffer 1–2 chunks ahead.
+- **Unbounded memory**: Failing to release processed audio data on the server side can cause memory leaks during long synthesis sessions.
+
+## Follow-Up Topics
+
+- How to benchmark time-to-first-audio across different hardware?
+- What buffering strategy minimizes perceived latency while avoiding stutters?
+- How do streaming constraints affect model architecture choices?
