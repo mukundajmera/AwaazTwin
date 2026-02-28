@@ -5,9 +5,12 @@ import { remark } from "remark";
 import html from "remark-html";
 import { Topic, ContentSection } from "./types";
 
-const contentDir = path.join(process.cwd(), "content");
+function getContentDir(): string {
+  return path.join(process.cwd(), "content");
+}
 
 export function getAllTopics(): Topic[] {
+  const contentDir = getContentDir();
   if (!fs.existsSync(contentDir)) return [];
 
   const topics: Topic[] = [];
@@ -45,6 +48,7 @@ export function getAllTopics(): Topic[] {
 export async function getTopicBySlug(
   slug: string
 ): Promise<{ topic: Topic; content: string } | null> {
+  const contentDir = getContentDir();
   const filePath = path.join(contentDir, `${slug}.mdx`);
   const altFilePath = path.join(contentDir, `${slug}.md`);
 
