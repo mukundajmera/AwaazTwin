@@ -1,0 +1,27 @@
+# AwaazTwin – Configuration
+#
+# Copy to `awaaztwin.yaml` in the project root and customise.
+# Environment variables (AWAAZTWIN_*) override values in this file.
+
+env: local  # local | staging | production
+
+server:
+  host: 0.0.0.0
+  port: 3000
+  baseUrl: http://localhost:3000
+
+llm:
+  provider: ollama          # ollama | llama-cpp | openai | azure | custom
+  baseUrl: http://localhost:11434
+  model: llama3.2
+  # apiKey: sk-...          # uncomment for cloud providers
+  maxTokens: 2048
+  temperature: 0.7
+
+tts:
+  serverUrl: http://localhost:5002
+  enabled: false            # set to true once Coqui TTS is running
+
+limits:
+  maxJobsPerMinute: 30
+  maxAudioMinutesPerMonth: 200
