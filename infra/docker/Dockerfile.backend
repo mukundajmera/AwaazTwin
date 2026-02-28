@@ -1,0 +1,46 @@
+# ---------------------------------------------------------------------------
+# AwaazTwin – Backend (FastAPI + RQ workers)
+# Multi-stage build: base → deps → runtime
+# ---------------------------------------------------------------------------
+
+# Stage 1: System dependencies
+FROM python:3.11-slim AS base
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ffmpeg \
+        libsndfile1 \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Stage 2: Install Python dependencies
+FROM base AS deps
+
+COPY pyproject.toml ./
+RUN pip install --no-cache-dir . \
+    && pip install --no-cache-dir pip setuptools wheel
+
+# Stage 3: Final runtime image
+FROM base AS runtime
+
+COPY --from=deps /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=deps /usr/local/bin /usr/local/bin
+
+WORKDIR /app
+
+COPY pyproject.toml ./
+COPY backend/ ./backend/
+COPY workers/ ./workers/
+COPY awaaztwin.example.yaml ./awaaztwin.example.yaml
+
+# Install the project in editable-like mode so imports resolve
+RUN pip install --no-cache-dir --no-deps -e .
+
+ENV PYTHONUNBUFFERED=1
+ENV AWAAZTWIN_CONFIG_PATH=/app/awaaztwin.yaml
+
+EXPOSE 8000
+
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
