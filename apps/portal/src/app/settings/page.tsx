@@ -1,8 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import {
+  type Provider,
+  isBaseUrlValid,
+  isModelValid,
+  requiresApiKey,
+} from "@/lib/validation";
 
-type Provider = "ollama" | "llama-cpp" | "openai" | "azure" | "custom";
 type ConnectionStatus =
   | { state: "idle" }
   | { state: "testing" }
@@ -25,14 +30,14 @@ export default function SettingsPage() {
   const [serverUrl, setServerUrl] = useState("");
   const [ttsStatus, setTtsStatus] = useState<ConnectionStatus>({ state: "idle" });
 
-  const showApiKey = provider === "openai" || provider === "azure";
+  const showApiKey = requiresApiKey(provider);
 
   async function testLlmConnection() {
-    if (!baseUrl.trim()) {
+    if (!isBaseUrlValid(baseUrl)) {
       setLlmStatus({ state: "error", message: "Base URL is required" });
       return;
     }
-    if (!model.trim()) {
+    if (!isModelValid(model)) {
       setLlmStatus({ state: "error", message: "Model name is required" });
       return;
     }

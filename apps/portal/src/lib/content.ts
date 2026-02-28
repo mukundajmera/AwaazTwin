@@ -3,14 +3,29 @@ import path from "path";
 import matter from "gray-matter";
 import { remark } from "remark";
 import html from "remark-html";
+import rehypeSanitize from "rehype-sanitize";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
+import rehypeStringify from "rehype-stringify";
 import { Topic, ContentSection } from "./types";
 
-function getContentDir(): string {
-  return path.join(process.cwd(), "content");
+const defaultContentDir = path.join(process.cwd(), "content");
+
+/**
+ * Validate a slug to prevent path traversal attacks.
+ * Rejects slugs containing "..", leading "/", backslashes, or null bytes.
+ */
+function isValidSlug(slug: string): boolean {
+  if (!slug) return false;
+  if (slug.includes("..")) return false;
+  if (slug.startsWith("/")) return false;
+  if (slug.includes("\\")) return false;
+  if (slug.includes("\0")) return false;
+  return true;
 }
 
-export function getAllTopics(): Topic[] {
-  const contentDir = getContentDir();
+export function getAllTopics(contentDir: string = defaultContentDir): Topic[] {
   if (!fs.existsSync(contentDir)) return [];
 
   const topics: Topic[] = [];
@@ -46,11 +61,24 @@ export function getAllTopics(): Topic[] {
 }
 
 export async function getTopicBySlug(
-  slug: string
+  slug: string,
+  contentDir: string = defaultContentDir
 ): Promise<{ topic: Topic; content: string } | null> {
-  const contentDir = getContentDir();
+  if (!isValidSlug(slug)) return null;
+
   const filePath = path.join(contentDir, `${slug}.mdx`);
   const altFilePath = path.join(contentDir, `${slug}.md`);
+
+  // Ensure resolved paths stay within contentDir
+  const resolvedPath = path.resolve(filePath);
+  const resolvedAltPath = path.resolve(altFilePath);
+  const resolvedContentDir = path.resolve(contentDir);
+  if (
+    !resolvedPath.startsWith(resolvedContentDir + path.sep) ||
+    !resolvedAltPath.startsWith(resolvedContentDir + path.sep)
+  ) {
+    return null;
+  }
 
   const actualPath = fs.existsSync(filePath)
     ? filePath
@@ -62,7 +90,13 @@ export async function getTopicBySlug(
   const fileContent = fs.readFileSync(actualPath, "utf-8");
   const { data, content: rawContent } = matter(fileContent);
 
-  const processed = await remark().use(html).process(rawContent);
+  // Render markdown to sanitized HTML to prevent XSS
+  const processed = await unified()
+    .use(remarkParse)
+    .use(remarkRehype)
+    .use(rehypeSanitize)
+    .use(rehypeStringify)
+    .process(rawContent);
   const contentHtml = processed.toString();
 
   const section = slug.split("/")[0] as ContentSection;

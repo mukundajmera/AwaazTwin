@@ -75,10 +75,10 @@ export default function TestConsolePage() {
                   type="button"
                   data-testid="run-test-button"
                   onClick={() => runSuite(suite.id)}
-                  disabled={isRunning}
+                  disabled={isRunning || suite.comingSoon}
                   className="shrink-0 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {isRunning ? "Running…" : "Run"}
+                  {suite.comingSoon ? "Coming Soon" : isRunning ? "Running…" : "Run"}
                 </button>
               </div>
 

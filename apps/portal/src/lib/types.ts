@@ -54,6 +54,8 @@ export interface TestSuiteDefinition {
   command: string;
   estimatedDuration: string;
   requiresExternalServices: boolean;
+  /** When true, the suite is a placeholder and not yet runnable */
+  comingSoon?: boolean;
 }
 
 export interface TestRun {

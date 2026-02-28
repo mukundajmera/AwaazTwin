@@ -24,6 +24,7 @@ export const testSuites: TestSuiteDefinition[] = [
     command: "npx vitest run --reporter=verbose tests/integration/llm",
     estimatedDuration: "~30s",
     requiresExternalServices: true,
+    comingSoon: true,
   },
   {
     id: "tts-integration",
@@ -32,6 +33,7 @@ export const testSuites: TestSuiteDefinition[] = [
     command: "npx vitest run --reporter=verbose tests/integration/tts",
     estimatedDuration: "~1min",
     requiresExternalServices: true,
+    comingSoon: true,
   },
   {
     id: "practice-flow",
@@ -40,5 +42,6 @@ export const testSuites: TestSuiteDefinition[] = [
     command: "npx playwright test e2e/practice-flow.spec.ts",
     estimatedDuration: "~30s",
     requiresExternalServices: false,
+    comingSoon: true,
   },
 ];
