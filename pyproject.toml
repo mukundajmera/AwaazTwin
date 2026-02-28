@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "awaaztwin"
+version = "0.1.0"
+description = "Voice-cloning & TTS backend for AwaazTwin"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.29",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.1",
+    "redis>=5.0",
+    "rq>=1.16",
+    "boto3>=1.34",
+    "pyyaml>=6.0",
+    "python-multipart>=0.0.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",
+]
+
+[tool.setuptools.packages.find]
+include = ["backend*", "workers*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
