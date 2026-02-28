@@ -1,0 +1,19 @@
+---
+title: "API Reference"
+summary: "Complete API reference for AwaazTwin endpoints and integrations."
+difficulty: intermediate
+tags: ["reference", "api", "documentation"]
+updatedAt: "2025-01-15T10:00:00Z"
+---
+
+## Overview
+
+AwaazTwin exposes a set of REST API endpoints through Next.js Route Handlers. All endpoints return JSON and follow standard HTTP status codes. The API is designed for internal use by the portal frontend, but can also be consumed by external tools or scripts running on the same machine. Authentication is not required for local-only deployments.
+
+## Core Endpoints
+
+The API is organized around key resources. The **Voices** endpoints (`/api/voices`) allow you to list, create, update, and delete voice profiles. The **Synthesize** endpoint (`/api/synthesize`) accepts text and a voice identifier, then returns an audio stream. The **Models** endpoints (`/api/models`) provide information about available TTS and cloning models, including their supported languages and parameter schemas. Each endpoint accepts standard query parameters for pagination and filtering where applicable.
+
+## Error Handling and Rate Limits
+
+All error responses follow a consistent format with a `code`, `message`, and optional `details` field. Common error codes include `400` for invalid input, `404` for missing resources, and `503` when the underlying TTS service is unavailable. Since AwaazTwin runs locally, there are no hard rate limits, but the API will return `429` if the synthesis queue exceeds its configured capacity. Check the Diagnostics page for real-time API health and queue status.

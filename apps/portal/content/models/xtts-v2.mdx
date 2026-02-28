@@ -1,0 +1,19 @@
+---
+title: "XTTS v2 Model Overview"
+summary: "Understanding the XTTS v2 model architecture, capabilities, and usage."
+difficulty: intermediate
+tags: ["models", "xtts", "architecture"]
+updatedAt: "2025-01-15T10:00:00Z"
+---
+
+## Architecture
+
+XTTS v2 is a state-of-the-art text-to-speech model that supports zero-shot voice cloning across multiple languages. It combines a GPT-based autoregressive decoder with a diffusion-based acoustic model to produce natural, expressive speech from just a few seconds of reference audio. The architecture is designed to balance quality and inference speed, making it practical for CPU-only deployments like those targeted by AwaazTwin.
+
+## Capabilities
+
+The model supports over a dozen languages out of the box and can clone a voice from as little as six seconds of reference audio. It handles long-form text, preserves prosody and emotion from the reference speaker, and can switch between languages while maintaining the cloned voice's identity. XTTS v2 also supports streaming inference, which means the portal can begin playing audio before the full utterance is synthesized, reducing perceived latency.
+
+## Usage in AwaazTwin
+
+Within the AwaazTwin portal, XTTS v2 is available as a selectable model in both the Voice Cloning and TTS sections. Upload or record a reference clip, choose XTTS v2 from the model dropdown, and enter your text. The portal handles tokenization, model inference, and audio post-processing automatically. You can compare outputs across different models side by side using the built-in comparison tool on the Playground page.
