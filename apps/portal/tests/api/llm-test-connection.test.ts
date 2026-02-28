@@ -1,5 +1,4 @@
-import { describe, it, expect } from "vitest";
-import { POST } from "@/app/api/llm/test-connection/route";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
@@ -11,6 +10,20 @@ function makeRequest(body: Record<string, unknown>): NextRequest {
     })
   );
 }
+
+// Mock the llm-client module
+vi.mock("@/lib/llm-client", () => ({
+  testLLMConnection: vi.fn(),
+}));
+
+import { testLLMConnection } from "@/lib/llm-client";
+import { POST } from "@/app/api/llm/test-connection/route";
+
+const mockedTestLLM = vi.mocked(testLLMConnection);
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe("POST /api/llm/test-connection", () => {
   it("returns 400 when baseUrl is missing", async () => {
@@ -28,6 +41,13 @@ describe("POST /api/llm/test-connection", () => {
   });
 
   it("returns success for valid request", async () => {
+    mockedTestLLM.mockResolvedValueOnce({
+      status: "ok",
+      latencyMs: 142,
+      model: "llama3.2",
+      message: "Connected",
+    });
+
     const res = await POST(
       makeRequest({
         baseUrl: "http://localhost:11434",

@@ -1,5 +1,4 @@
-import { describe, it, expect } from "vitest";
-import { POST } from "@/app/api/tts/test-connection/route";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
@@ -12,6 +11,20 @@ function makeRequest(body: Record<string, unknown>): NextRequest {
   );
 }
 
+// Mock the tts-client module
+vi.mock("@/lib/tts-client", () => ({
+  testTTSConnection: vi.fn(),
+}));
+
+import { testTTSConnection } from "@/lib/tts-client";
+import { POST } from "@/app/api/tts/test-connection/route";
+
+const mockedTestTTS = vi.mocked(testTTSConnection);
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe("POST /api/tts/test-connection", () => {
   it("returns 400 when serverUrl is missing", async () => {
     const res = await POST(makeRequest({}));
@@ -21,6 +34,14 @@ describe("POST /api/tts/test-connection", () => {
   });
 
   it("returns success for valid request", async () => {
+    mockedTestTTS.mockResolvedValueOnce({
+      status: "ok",
+      latencyMs: 85,
+      serverUrl: "http://localhost:5002",
+      availableModels: ["xtts_v2", "bark"],
+      message: "Connected",
+    });
+
     const res = await POST(
       makeRequest({ serverUrl: "http://localhost:5002" })
     );

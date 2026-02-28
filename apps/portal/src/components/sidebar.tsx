@@ -15,6 +15,7 @@ const utilityLinks = [
   { label: "Practice", href: "/practice", icon: "🎯" },
   { label: "Settings", href: "/settings", icon: "⚙️" },
   { label: "Test Console", href: "/tests", icon: "🧪" },
+  { label: "UAT Checklist", href: "/uat", icon: "📋" },
 ];
 
 export function Sidebar() {

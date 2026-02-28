@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { testLLMConnection, type LLMRequestOptions } from "@/lib/llm-client";
+import { validateServerUrl, isValidProvider, VALID_PROVIDERS_LIST } from "@/lib/url-validation";
 
-// TODO: Replace stub with real LLM connection test
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { baseUrl, model } = body as {
+  const { provider, baseUrl, model, apiKey } = body as {
     provider?: string;
     baseUrl?: string;
     model?: string;
@@ -17,10 +18,36 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({
-    status: "ok",
-    latencyMs: 142,
+  // Validate provider
+  const resolvedProvider = provider ?? "ollama";
+  if (!isValidProvider(resolvedProvider)) {
+    return NextResponse.json(
+      { error: `Unsupported provider: ${provider}. Must be one of: ${VALID_PROVIDERS_LIST}` },
+      { status: 400 }
+    );
+  }
+
+  // Validate baseUrl to prevent SSRF
+  const urlError = validateServerUrl(baseUrl);
+  if (urlError) {
+    return NextResponse.json(
+      { error: `Invalid baseUrl: ${urlError}` },
+      { status: 400 }
+    );
+  }
+
+  const opts: LLMRequestOptions = {
+    provider: resolvedProvider as LLMRequestOptions["provider"],
+    baseUrl,
     model,
-    message: "Connection successful (stubbed)",
-  });
+    apiKey: apiKey || undefined,
+  };
+
+  const result = await testLLMConnection(opts);
+
+  if (result.status === "error") {
+    return NextResponse.json(result, { status: 502 });
+  }
+
+  return NextResponse.json(result);
 }

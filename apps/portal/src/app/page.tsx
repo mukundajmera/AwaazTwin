@@ -60,7 +60,7 @@ export default function HomePage() {
         ))}
       </div>
 
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
           href="/practice"
           className="block p-6 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all"
@@ -95,6 +95,18 @@ export default function HomePage() {
           </h2>
           <p className="text-sm text-gray-500">
             Run diagnostics and verify your setup
+          </p>
+        </Link>
+        <Link
+          href="/uat"
+          className="block p-6 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition-all"
+        >
+          <div className="text-2xl mb-2">📋</div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">
+            UAT Checklist
+          </h2>
+          <p className="text-sm text-gray-500">
+            User acceptance testing scenarios and verification
           </p>
         </Link>
       </div>

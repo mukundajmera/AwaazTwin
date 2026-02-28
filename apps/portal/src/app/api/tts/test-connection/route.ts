@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { testTTSConnection } from "@/lib/tts-client";
+import { validateServerUrl } from "@/lib/url-validation";
 
-// TODO: Replace stub with real TTS connection test
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const { serverUrl } = body as { serverUrl?: string };
@@ -12,11 +13,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({
-    status: "ok",
-    latencyMs: 85,
-    serverUrl,
-    availableModels: ["xtts_v2", "bark"],
-    message: "TTS server connected (stubbed)",
-  });
+  // Validate serverUrl to prevent SSRF
+  const urlError = validateServerUrl(serverUrl);
+  if (urlError) {
+    return NextResponse.json(
+      { error: `Invalid serverUrl: ${urlError}` },
+      { status: 400 }
+    );
+  }
+
+  const result = await testTTSConnection({ serverUrl });
+
+  if (result.status === "error") {
+    return NextResponse.json(result, { status: 502 });
+  }
+
+  return NextResponse.json(result);
 }
