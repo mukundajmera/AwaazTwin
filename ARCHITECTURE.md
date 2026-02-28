@@ -92,6 +92,7 @@ Do **not** invent files, APIs, or behaviors not present in the repo or explicitl
 |---|---|---|
 | **0** | North Star, constraints, agent rules | `ARCHITECTURE.md`, `AGENTS.md`, TODO list |
 | **1** | System architecture design | Architecture diagram, domain model, API surface, test strategy doc |
-| **2** | Portal MVP + Settings + Test Console | Next.js scaffold, navigation, topic pages, settings UI, test console, Playwright E2E |
-| **3** | Content deepening + Practice flows | Voice cloning guides, practice sessions, self-scoring, content enrichment |
-| **4** | Real LLM/TTS integration + UAT | Real backend wiring, UI-triggered Playwright tests, UAT checklist |
+| **2** | UI design | UI wireframes, component specs, routing, state management, test approach |
+| **3** | Portal MVP + Settings + Test Console | Next.js scaffold, navigation, topic pages, settings UI, test console, Playwright E2E |
+| **4** | Content deepening + Practice flows | Voice cloning guides, practice sessions, self-scoring, content enrichment |
+| **5** | Real LLM/TTS integration + UAT | Real backend wiring, UI-triggered Playwright tests, UAT checklist |

@@ -48,7 +48,19 @@
 - [x] Document TTS proxy interface → see `docs/design.md` §6
 - [x] Define testing strategy document (what gets tested where, coverage targets) → see `docs/design.md` §9
 
-### Phase 2 – Portal MVP
+### Phase 2 – UI Design
+- [x] Design Home & Navigation: sidebar with content sections, progress indicators, status bar → see `docs/ui-design.md` §2
+- [x] Design Topic Page Layout: MDX rendering, side panel (key ideas, pitfalls, related topics, practice button) → see `docs/ui-design.md` §3
+- [x] Design Settings / Connections Page: LLM config form, TTS config form, test connection buttons, voice management → see `docs/ui-design.md` §4
+- [x] Design Test Console / Diagnostics Page: suite cards, run/poll flow, results panel with logs → see `docs/ui-design.md` §5
+- [x] Design Practice / Interview Mode Page: timed phases, phase progress stepper, scoring sliders, session persistence → see `docs/ui-design.md` §6
+- [x] Define shared components (ConnectionStatusBadge, Toast, EmptyState, SliderInput, etc.) → see `docs/ui-design.md` §7
+- [x] Define routing & URL structure with App Router file layout → see `docs/ui-design.md` §8
+- [x] Define state management architecture (AppStateProvider, localStorage keys) → see `docs/ui-design.md` §9
+- [x] Define responsive breakpoints & accessibility requirements → see `docs/ui-design.md` §10
+- [x] Define per-surface testing approach with test file organization → see `docs/ui-design.md` §11
+
+### Phase 3 – Portal MVP Implementation
 - [ ] Scaffold Next.js App Router project (`apps/portal` or root-level)
 - [ ] Set up TypeScript, Tailwind CSS, shadcn/ui
 - [ ] Set up Vitest for unit/integration tests
@@ -61,7 +73,7 @@
 - [ ] Write unit, integration, and E2E tests for all MVP features
 - [ ] Set up CI/CD pipeline (GitHub Actions)
 
-### Phase 3 – Content & Practice Flows
+### Phase 4 – Content & Practice Flows
 - [ ] Create content for all sections (Voice Cloning Guides, TTS Tutorials, Model Selection, Audio Processing Workflows, etc.)
 - [ ] Implement PracticeTemplate and PracticeSession components
 - [ ] Implement practice / interview mode UI with timed phases
@@ -69,7 +81,7 @@
 - [ ] Wire practice session persistence
 - [ ] Add tests for practice flows (unit, integration, E2E)
 
-### Phase 4 – Real Integration & UAT
+### Phase 5 – Real Integration & UAT
 - [ ] Replace LLM stubs with real Ollama/llama-server client
 - [ ] Replace TTS stubs with real Coqui TTS proxy
 - [ ] Implement voice cloning flow (upload sample → register voice → generate speech)
