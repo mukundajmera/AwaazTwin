@@ -78,7 +78,7 @@ def prepare_voice(voice_profile_id: str, engine_name: str, sample_keys: list[str
     # NOTE: EngineAdapter.prepare_voice is async; run it synchronously in the worker.
     import asyncio
 
-    embedding_ref = asyncio.get_event_loop().run_until_complete(
+    embedding_ref = asyncio.run(
         adapter.prepare_voice(wav_paths)
     )
 

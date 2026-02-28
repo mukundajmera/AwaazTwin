@@ -60,7 +60,7 @@ def run_synthesis(job_id: str, engine_name: str, voice_profile_id: str,
     import asyncio
 
     try:
-        output_path = asyncio.get_event_loop().run_until_complete(
+        output_path = asyncio.run(
             adapter.synthesize(text, voice_ref, params or {})
         )
     except Exception:

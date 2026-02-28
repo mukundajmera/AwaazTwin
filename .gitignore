@@ -26,3 +26,6 @@ htmlcov/
 
 # AwaazTwin local config (may contain secrets)
 awaaztwin.yaml
+
+# Local data
+.data/

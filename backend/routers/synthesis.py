@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -31,7 +32,7 @@ async def submit_synthesis_job(
     TODO: Validate voice profile exists and is READY, persist job row,
           enqueue onto Redis/RQ synthesis queue.
     """
-    now = __import__("datetime").datetime.now(__import__("datetime").timezone.utc)
+    now = datetime.now(timezone.utc)
     return SynthesisJobResponse(
         id=uuid.uuid4(),
         voice_profile_id=body.voice_profile_id,

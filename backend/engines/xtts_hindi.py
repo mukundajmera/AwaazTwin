@@ -9,6 +9,7 @@ TODO: Replace stubs with real Coqui XTTS v2 model loading and inference.
 from __future__ import annotations
 
 import logging
+import os
 import struct
 import tempfile
 from pathlib import Path
@@ -63,7 +64,7 @@ class XTTSHindiEngineAdapter(EngineAdapter):
         fd, tmp = tempfile.mkstemp(suffix=".pth", prefix="xtts_emb_")
         embedding_path = Path(tmp)
         embedding_path.write_bytes(b"\x00" * 64)  # dummy embedding
-        __import__("os").close(fd)
+        os.close(fd)
         return VoiceEmbeddingRef(
             engine_name=self.name,
             embedding_path=embedding_path,
@@ -86,5 +87,5 @@ class XTTSHindiEngineAdapter(EngineAdapter):
         fd, tmp = tempfile.mkstemp(suffix=".wav", prefix="xtts_out_")
         output_path = Path(tmp)
         output_path.write_bytes(_WAV_HEADER)
-        __import__("os").close(fd)
+        os.close(fd)
         return output_path

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
@@ -28,7 +29,7 @@ async def create_voice_profile(
     TODO: Persist to DB, enqueue voice-prep job if samples are provided.
     """
     # TODO: Insert into DB and return real object.
-    now = __import__("datetime").datetime.now(__import__("datetime").timezone.utc)
+    now = datetime.now(timezone.utc)
     return VoiceProfileResponse(
         id=uuid.uuid4(),
         user_id=uuid.uuid4(),  # TODO: derive from auth context
@@ -85,7 +86,7 @@ async def upload_sample(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Filename is required")
 
     # TODO: Save to storage and DB.
-    now = __import__("datetime").datetime.now(__import__("datetime").timezone.utc)
+    now = datetime.now(timezone.utc)
     return AudioSampleResponse(
         id=uuid.uuid4(),
         voice_profile_id=voice_id,
