@@ -29,6 +29,9 @@ export default function SettingsPage() {
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const [serverUrl, setServerUrl] = useState("");
   const [ttsStatus, setTtsStatus] = useState<ConnectionStatus>({ state: "idle" });
+  const [voiceUploadStatus, setVoiceUploadStatus] = useState<
+    { state: "idle" } | { state: "uploading" } | { state: "done"; speakerId: string } | { state: "error"; message: string }
+  >({ state: "idle" });
 
   const showApiKey = requiresApiKey(provider);
 
@@ -50,10 +53,10 @@ export default function SettingsPage() {
         body: JSON.stringify({ provider, baseUrl, model, apiKey: apiKey || undefined }),
       });
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok && data.status === "ok") {
         setLlmStatus({ state: "success", latencyMs: data.latencyMs ?? 0 });
       } else {
-        setLlmStatus({ state: "error", message: data.error ?? "Connection failed" });
+        setLlmStatus({ state: "error", message: data.message ?? data.error ?? "Connection failed" });
       }
     } catch (err) {
       setLlmStatus({
@@ -77,10 +80,10 @@ export default function SettingsPage() {
         body: JSON.stringify({ serverUrl }),
       });
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok && data.status === "ok") {
         setTtsStatus({ state: "success", latencyMs: data.latencyMs ?? 0 });
       } else {
-        setTtsStatus({ state: "error", message: data.error ?? "Connection failed" });
+        setTtsStatus({ state: "error", message: data.message ?? data.error ?? "Connection failed" });
       }
     } catch (err) {
       setTtsStatus({
@@ -259,17 +262,61 @@ export default function SettingsPage() {
           />
         </div>
 
-        {/* TODO: Wire up voice sample upload to backend */}
+        {/* Voice Sample Upload */}
         <div>
           <label htmlFor="tts-voice-sample" className="block text-sm font-medium text-gray-700 mb-1">
             Upload Voice Sample
           </label>
           <input
             id="tts-voice-sample"
+            data-testid="tts-voice-sample"
             type="file"
             accept="audio/*"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file || !serverUrl.trim()) {
+                setVoiceUploadStatus({ state: "error", message: "Select a file and enter a server URL" });
+                return;
+              }
+              setVoiceUploadStatus({ state: "uploading" });
+              try {
+                const buf = await file.arrayBuffer();
+                const audioBase64 = Buffer.from(buf).toString("base64");
+                const res = await fetch("/api/tts/clone", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    audioBase64,
+                    voiceName: file.name.replace(/\.[^.]+$/, ""),
+                    serverUrl,
+                  }),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                  setVoiceUploadStatus({ state: "done", speakerId: data.speakerId });
+                } else {
+                  setVoiceUploadStatus({ state: "error", message: data.error ?? "Upload failed" });
+                }
+              } catch (err) {
+                setVoiceUploadStatus({
+                  state: "error",
+                  message: err instanceof Error ? err.message : "Upload failed",
+                });
+              }
+            }}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
           />
+          {voiceUploadStatus.state === "uploading" && (
+            <p className="text-xs text-blue-600 mt-1 animate-pulse">⏳ Uploading and registering voice… This may take a while on CPU.</p>
+          )}
+          {voiceUploadStatus.state === "done" && (
+            <p data-testid="voice-upload-success" className="text-xs text-green-600 mt-1">
+              ✅ Voice registered (Speaker ID: {voiceUploadStatus.speakerId})
+            </p>
+          )}
+          {voiceUploadStatus.state === "error" && (
+            <p className="text-xs text-red-600 mt-1">❌ {voiceUploadStatus.message}</p>
+          )}
         </div>
 
         {/* Test Connection */}

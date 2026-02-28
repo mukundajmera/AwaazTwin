@@ -1,5 +1,4 @@
-import { describe, it, expect } from "vitest";
-import { POST } from "@/app/api/tests/run/route";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
@@ -11,6 +10,19 @@ function makeRequest(body: Record<string, unknown>): NextRequest {
     })
   );
 }
+
+// Mock child_process exec
+vi.mock("child_process", () => ({
+  exec: vi.fn((_cmd: string, _opts: unknown, callback: (err: Error | null, stdout: string, stderr: string) => void) => {
+    callback(null, "Tests  5 passed (5)\n5 passed (10.2s)", "");
+  }),
+}));
+
+import { POST } from "@/app/api/tests/run/route";
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe("POST /api/tests/run", () => {
   it("returns 404 for unknown suite ID", async () => {

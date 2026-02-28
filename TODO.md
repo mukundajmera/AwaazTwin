@@ -82,13 +82,13 @@
 - [x] Add tests for practice flows (unit, integration, E2E)
 
 ### Phase 5 – Real Integration & UAT
-- [ ] Replace LLM stubs with real Ollama/llama-server client
-- [ ] Replace TTS stubs with real Coqui TTS proxy
-- [ ] Implement voice cloning flow (upload sample → register voice → generate speech)
-- [ ] Wire UI "Test Connection" buttons to real endpoints
-- [ ] Implement `/api/tests/run` to trigger actual Playwright suites
-- [ ] Create UAT checklist view in the portal
-- [ ] Write comprehensive Playwright UAT scenarios (content browsing, LLM query, TTS generation, full practice session)
+- [x] Replace LLM stubs with real Ollama/llama-server client
+- [x] Replace TTS stubs with real Coqui TTS proxy
+- [x] Implement voice cloning flow (upload sample → register voice → generate speech)
+- [x] Wire UI "Test Connection" buttons to real endpoints
+- [x] Implement `/api/tests/run` to trigger actual Playwright suites
+- [x] Create UAT checklist view in the portal
+- [x] Write comprehensive Playwright UAT scenarios (content browsing, LLM query, TTS generation, full practice session)
 - [ ] Performance testing on CPU-only machines
 - [ ] Security review (API key handling, input sanitization, CORS)
 - [ ] Documentation for local development setup and deployment

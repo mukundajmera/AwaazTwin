@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { testLLMConnection, type LLMRequestOptions } from "@/lib/llm-client";
 
-// TODO: Replace stub with real LLM connection test
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { baseUrl, model } = body as {
+  const { provider, baseUrl, model, apiKey } = body as {
     provider?: string;
     baseUrl?: string;
     model?: string;
@@ -17,10 +17,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({
-    status: "ok",
-    latencyMs: 142,
+  const opts: LLMRequestOptions = {
+    provider: (provider as LLMRequestOptions["provider"]) ?? "ollama",
+    baseUrl,
     model,
-    message: "Connection successful (stubbed)",
-  });
+    apiKey: apiKey || undefined,
+  };
+
+  const result = await testLLMConnection(opts);
+
+  if (result.status === "error") {
+    return NextResponse.json(result, { status: 502 });
+  }
+
+  return NextResponse.json(result);
 }
