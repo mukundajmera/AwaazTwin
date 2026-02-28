@@ -6,3 +6,26 @@ dist/
 *.tsbuildinfo
 test-results/
 playwright-report/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.eggs/
+*.whl
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.so
+
+# AwaazTwin local config (may contain secrets)
+awaaztwin.yaml
+
+# Local data
+.data/
