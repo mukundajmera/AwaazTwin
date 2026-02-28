@@ -1,0 +1,86 @@
+# AwaazTwin – Docker Compose for local deployment
+#
+# Usage:
+#   docker compose up -d          # start all services
+#   docker compose up -d portal   # start portal only (if LLM/TTS run externally)
+#   docker compose logs -f        # follow logs
+#
+# GPU support for TTS (requires NVIDIA Container Toolkit):
+#   docker compose --profile gpu up -d
+#
+# Prerequisites:
+#   - Docker Engine 24+ with Compose V2
+#   - (Optional) NVIDIA drivers + NVIDIA Container Toolkit for GPU TTS
+
+services:
+  # ── AwaazTwin Portal (Next.js) ──────────────────────────────────────
+  portal:
+    build:
+      context: ./apps/portal
+      dockerfile: Dockerfile
+    ports:
+      - "${PORTAL_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - AWAAZTWIN_LLM_BASE_URL=${AWAAZTWIN_LLM_BASE_URL:-http://ollama:11434}
+      - AWAAZTWIN_LLM_MODEL=${AWAAZTWIN_LLM_MODEL:-llama3.2}
+      - AWAAZTWIN_TTS_SERVER_URL=${AWAAZTWIN_TTS_SERVER_URL:-http://coqui-tts:5002}
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    networks:
+      - awaaztwin
+
+  # ── Ollama (LLM Backend – CPU) ─────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - awaaztwin
+
+  # ── Coqui TTS (CPU mode, default) ─────────────────────────────────
+  coqui-tts:
+    image: ghcr.io/coqui-ai/tts:latest
+    ports:
+      - "${TTS_PORT:-5002}:5002"
+    volumes:
+      - tts_models:/root/.local/share/tts
+    entrypoint: ["python3", "-m", "TTS.server.server", "--port", "5002"]
+    restart: unless-stopped
+    networks:
+      - awaaztwin
+
+  # ── Coqui TTS (GPU mode – requires NVIDIA Container Toolkit) ──────
+  coqui-tts-gpu:
+    image: ghcr.io/coqui-ai/tts:latest
+    profiles:
+      - gpu
+    ports:
+      - "${TTS_GPU_PORT:-5003}:5002"
+    volumes:
+      - tts_models:/root/.local/share/tts
+    entrypoint: ["python3", "-m", "TTS.server.server", "--port", "5002", "--use_cuda", "true"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    networks:
+      - awaaztwin
+
+volumes:
+  ollama_data:
+    driver: local
+  tts_models:
+    driver: local
+
+networks:
+  awaaztwin:
+    driver: bridge

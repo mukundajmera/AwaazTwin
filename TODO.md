@@ -71,7 +71,7 @@
 - [x] Implement Test Console / Diagnostics page
 - [x] Create stubbed API route handlers (`/api/llm/test-connection`, `/api/tts/test-connection`, `/api/tests/run`)
 - [x] Write unit, integration, and E2E tests for all MVP features
-- [ ] Set up CI/CD pipeline (GitHub Actions)
+- [x] Set up CI/CD pipeline (GitHub Actions)
 
 ### Phase 4 – Content & Practice Flows
 - [x] Create content for all sections (Voice Cloning Guides, TTS Tutorials, Model Selection, Audio Processing Workflows, etc.)
@@ -90,5 +90,5 @@
 - [x] Create UAT checklist view in the portal
 - [x] Write comprehensive Playwright UAT scenarios (content browsing, LLM query, TTS generation, full practice session)
 - [ ] Performance testing on CPU-only machines
-- [ ] Security review (API key handling, input sanitization, CORS)
-- [ ] Documentation for local development setup and deployment
+- [x] Security review (API key handling, input sanitization, CORS)
+- [x] Documentation for local development setup and deployment

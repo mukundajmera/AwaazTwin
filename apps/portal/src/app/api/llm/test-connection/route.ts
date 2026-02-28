@@ -43,11 +43,20 @@ export async function POST(request: NextRequest) {
     apiKey: apiKey || undefined,
   };
 
-  const result = await testLLMConnection(opts);
+  try {
+    const result = await testLLMConnection(opts);
 
-  if (result.status === "error") {
-    return NextResponse.json(result, { status: 502 });
+    if (result.status === "error") {
+      return NextResponse.json(result, { status: 502 });
+    }
+
+    return NextResponse.json(result);
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Unknown error testing LLM connection";
+    return NextResponse.json(
+      { status: "error", latencyMs: 0, model, message },
+      { status: 502 }
+    );
   }
-
-  return NextResponse.json(result);
 }
