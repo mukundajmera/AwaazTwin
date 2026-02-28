@@ -40,13 +40,13 @@
 ## TODOs (by Phase)
 
 ### Phase 1 – System Architecture
-- [ ] Clarify content scope: define what content AwaazTwin will serve (voice cloning guides, TTS tutorials, AI audio workflows vs. system-design interview content)
-- [ ] Create detailed architecture design document (API surface, domain model, data flow)
-- [ ] Decide on state persistence strategy (localStorage vs. SQLite vs. other)
-- [ ] Define API endpoint contracts with request/response schemas
-- [ ] Document LLM client abstraction interface
-- [ ] Document TTS proxy interface
-- [ ] Define testing strategy document (what gets tested where, coverage targets)
+- [x] Clarify content scope: define what content AwaazTwin will serve (voice cloning guides, TTS tutorials, AI audio workflows) → see `docs/design.md` §8
+- [x] Create detailed architecture design document (API surface, domain model, data flow) → see `docs/design.md`
+- [x] Decide on state persistence strategy (localStorage + server-side JSON file store) → see `docs/design.md` §7
+- [x] Define API endpoint contracts with request/response schemas → see `docs/design.md` §4
+- [x] Document LLM client abstraction interface → see `docs/design.md` §5
+- [x] Document TTS proxy interface → see `docs/design.md` §6
+- [x] Define testing strategy document (what gets tested where, coverage targets) → see `docs/design.md` §9
 
 ### Phase 2 – Portal MVP
 - [ ] Scaffold Next.js App Router project (`apps/portal` or root-level)
