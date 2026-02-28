@@ -92,3 +92,19 @@
 - [ ] Performance testing on CPU-only machines
 - [ ] Security review (API key handling, input sanitization, CORS)
 - [ ] Documentation for local development setup and deployment
+
+### instruction_2.md – Backend Engine & Worker Implementation
+- [x] Phase 3: Engine abstraction layer (`backend/engines/`)
+  - [x] `EngineAdapter` ABC with `prepare_voice` and `synthesize` methods
+  - [x] `VoiceEmbeddingRef` data structure with JSON serialisation
+  - [x] `EngineConfig` model with env-var and device-auto-detection support
+  - [x] `XTTSHindiEngineAdapter` placeholder (logs + dummy WAV)
+  - [x] `OpenVoiceEngineAdapter` placeholder (logs + dummy WAV)
+  - [x] `get_engine_adapter()` factory method
+  - [x] 18 pytest tests for engine layer
+- [x] Phase 4: Worker and queue implementation (`backend/workers/`)
+  - [x] Celery app with Redis broker and task routing
+  - [x] `voice_prep` queue + `prepare_voice_profile` task
+  - [x] `synthesis` queue + `run_synthesis` task
+  - [x] Logging, retry (max 3), and graceful shutdown
+  - [x] 5 pytest tests for worker tasks
