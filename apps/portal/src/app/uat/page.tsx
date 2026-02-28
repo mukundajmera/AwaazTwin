@@ -104,33 +104,50 @@ export default function UATChecklistPage() {
       });
       const data = await res.json();
 
-      // Mark all scenarios based on overall result
+      // Handle non-2xx or error responses
+      if (!res.ok || data.error) {
+        const errorMsg = data.error ?? `Server returned ${res.status}`;
+        setResults((prev) => {
+          const next = { ...prev };
+          for (const s of scenarios) {
+            if (!s.requiresExternalServices) {
+              next[s.id] = { status: "fail", message: errorMsg };
+            }
+          }
+          return next;
+        });
+        return;
+      }
+
+      // Mark all scenarios based on overall result (single state update)
       const passed = data.status === "completed" && data.failed === 0;
-      for (const s of scenarios) {
-        if (!s.requiresExternalServices) {
-          setResults((prev) => ({
-            ...prev,
-            [s.id]: {
+      setResults((prev) => {
+        const next = { ...prev };
+        for (const s of scenarios) {
+          if (!s.requiresExternalServices) {
+            next[s.id] = {
               status: passed ? "pass" : "fail",
               message: passed
                 ? `Passed (${data.durationMs}ms)`
                 : `Suite ${data.status}: ${data.passed} passed, ${data.failed} failed`,
-            },
-          }));
+            };
+          }
         }
-      }
+        return next;
+      });
     } catch (err) {
-      for (const s of scenarios) {
-        if (!s.requiresExternalServices) {
-          setResults((prev) => ({
-            ...prev,
-            [s.id]: {
+      setResults((prev) => {
+        const next = { ...prev };
+        for (const s of scenarios) {
+          if (!s.requiresExternalServices) {
+            next[s.id] = {
               status: "fail",
               message: err instanceof Error ? err.message : "Failed to run UAT",
-            },
-          }));
+            };
+          }
         }
-      }
+        return next;
+      });
     } finally {
       setRunningAll(false);
     }

@@ -193,8 +193,14 @@ export async function cloneVoice(
   }
 
   const data = await res.json();
+  const speakerId = data.speaker_id ?? data.speakerId;
+  if (!speakerId || typeof speakerId !== "string") {
+    throw new Error(
+      "Voice cloning failed: missing speaker id in successful response",
+    );
+  }
   return {
-    speakerId: data.speaker_id ?? data.speakerId ?? "",
+    speakerId,
     voiceName: req.voiceName,
     message: data.message ?? "Voice registered successfully",
   };

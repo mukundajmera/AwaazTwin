@@ -4,6 +4,14 @@ import { exec } from "child_process";
 import path from "path";
 
 export async function POST(request: NextRequest) {
+  // Only allow test execution in non-production environments
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json(
+      { error: "Test execution is disabled in production" },
+      { status: 403 }
+    );
+  }
+
   const body = await request.json();
   const { suiteId } = body as { suiteId?: string };
 
@@ -39,10 +47,16 @@ export async function POST(request: NextRequest) {
           env: { ...process.env, FORCE_COLOR: "0", CI: "true" },
         },
         (error, stdout, stderr) => {
+          const exitCode =
+            error == null
+              ? 0
+              : typeof error.code === "number"
+              ? error.code
+              : 1;
           resolve({
             stdout: stdout ?? "",
             stderr: stderr ?? "",
-            code: error ? error.code ?? 1 : 0,
+            code: exitCode,
           });
         }
       );

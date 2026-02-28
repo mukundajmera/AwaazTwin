@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { speak } from "@/lib/tts-client";
+import { validateServerUrl, MAX_TTS_TEXT_LENGTH } from "@/lib/url-validation";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -13,6 +14,23 @@ export async function POST(request: NextRequest) {
   if (!text || !serverUrl) {
     return NextResponse.json(
       { error: "text and serverUrl are required" },
+      { status: 400 },
+    );
+  }
+
+  // Enforce text size limit to prevent resource exhaustion
+  if (text.length > MAX_TTS_TEXT_LENGTH) {
+    return NextResponse.json(
+      { error: `text exceeds maximum length of ${MAX_TTS_TEXT_LENGTH} characters` },
+      { status: 413 },
+    );
+  }
+
+  // Validate serverUrl to prevent SSRF
+  const urlError = validateServerUrl(serverUrl);
+  if (urlError) {
+    return NextResponse.json(
+      { error: `Invalid serverUrl: ${urlError}` },
       { status: 400 },
     );
   }

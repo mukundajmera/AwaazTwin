@@ -121,5 +121,21 @@ describe("tts-client", () => {
         )
       ).rejects.toThrow(/Voice cloning failed/);
     });
+
+    it("throws when speaker id is missing in response", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ message: "OK" }),
+          { status: 200 }
+        )
+      );
+
+      await expect(
+        cloneVoice(
+          { audioBase64: "data", voiceName: "test" },
+          defaultOpts
+        )
+      ).rejects.toThrow(/missing speaker id/);
+    });
   });
 });

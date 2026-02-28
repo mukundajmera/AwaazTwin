@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { testLLMConnection, type LLMRequestOptions } from "@/lib/llm-client";
+import { validateServerUrl, isValidProvider, VALID_PROVIDERS_LIST } from "@/lib/url-validation";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -17,8 +18,26 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Validate provider
+  const resolvedProvider = provider ?? "ollama";
+  if (!isValidProvider(resolvedProvider)) {
+    return NextResponse.json(
+      { error: `Unsupported provider: ${provider}. Must be one of: ${VALID_PROVIDERS_LIST}` },
+      { status: 400 }
+    );
+  }
+
+  // Validate baseUrl to prevent SSRF
+  const urlError = validateServerUrl(baseUrl);
+  if (urlError) {
+    return NextResponse.json(
+      { error: `Invalid baseUrl: ${urlError}` },
+      { status: 400 }
+    );
+  }
+
   const opts: LLMRequestOptions = {
-    provider: (provider as LLMRequestOptions["provider"]) ?? "ollama",
+    provider: resolvedProvider as LLMRequestOptions["provider"],
     baseUrl,
     model,
     apiKey: apiKey || undefined,

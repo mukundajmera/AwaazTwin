@@ -281,7 +281,15 @@ export default function SettingsPage() {
               setVoiceUploadStatus({ state: "uploading" });
               try {
                 const buf = await file.arrayBuffer();
-                const audioBase64 = Buffer.from(buf).toString("base64");
+                const bytes = new Uint8Array(buf);
+                const chunks: string[] = [];
+                const chunkSize = 8192;
+                for (let i = 0; i < bytes.byteLength; i += chunkSize) {
+                  chunks.push(
+                    String.fromCharCode(...bytes.subarray(i, i + chunkSize))
+                  );
+                }
+                const audioBase64 = btoa(chunks.join(""));
                 const res = await fetch("/api/tts/clone", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },

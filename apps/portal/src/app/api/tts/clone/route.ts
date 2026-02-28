@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cloneVoice } from "@/lib/tts-client";
+import { validateServerUrl, MAX_AUDIO_BASE64_LENGTH } from "@/lib/url-validation";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -10,9 +11,33 @@ export async function POST(request: NextRequest) {
     serverUrl?: string;
   };
 
-  if (!audioBase64 || !voiceName || !serverUrl) {
+  if (
+    typeof audioBase64 !== "string" ||
+    typeof voiceName !== "string" ||
+    typeof serverUrl !== "string" ||
+    !audioBase64 ||
+    !voiceName ||
+    !serverUrl
+  ) {
     return NextResponse.json(
       { error: "audioBase64, voiceName, and serverUrl are required" },
+      { status: 400 },
+    );
+  }
+
+  // Enforce a maximum size for the base64 audio payload to reduce DoS risk
+  if (audioBase64.length > MAX_AUDIO_BASE64_LENGTH) {
+    return NextResponse.json(
+      { error: "audioBase64 payload is too large" },
+      { status: 413 },
+    );
+  }
+
+  // Validate serverUrl to prevent SSRF
+  const urlError = validateServerUrl(serverUrl);
+  if (urlError) {
+    return NextResponse.json(
+      { error: `Invalid serverUrl: ${urlError}` },
       { status: 400 },
     );
   }
