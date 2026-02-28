@@ -1,0 +1,19 @@
+---
+title: "Setting Up Coqui TTS"
+summary: "Step-by-step guide to installing and configuring Coqui TTS for text-to-speech."
+difficulty: intermediate
+tags: ["tts", "coqui", "setup"]
+updatedAt: "2025-01-15T10:00:00Z"
+---
+
+## Overview
+
+Coqui TTS is the default text-to-speech engine used by AwaazTwin. It runs inside a Docker container to keep your host system clean and to ensure consistent behavior across macOS, Linux, and Windows. Coqui TTS is optional — the portal will gracefully degrade if the TTS service is unavailable — but enabling it unlocks the full voice synthesis pipeline.
+
+## Installation
+
+To get started, make sure Docker is installed and running on your machine. Pull the Coqui TTS image by running the provided setup command from the AwaazTwin portal's **TTS Configuration** page, or manually execute `docker pull` with the image tag specified in the project documentation. Once the image is downloaded, the portal can automatically start and manage the container for you. The TTS service listens on a local port and exposes a REST API that the portal calls behind the scenes.
+
+## Configuration and Testing
+
+After the container is running, navigate to the **TTS Settings** panel in the portal to verify the connection. You can select a default voice model, adjust synthesis parameters like speaking rate and pitch, and run a quick test by typing sample text and clicking **Synthesize**. If you encounter issues, check the container logs from the Diagnostics page. Coqui TTS is designed to run on CPU, though synthesis will be faster if a GPU is available. All configuration is persisted locally so your settings survive restarts.

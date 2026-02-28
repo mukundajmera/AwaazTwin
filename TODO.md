@@ -61,16 +61,16 @@
 - [x] Define per-surface testing approach with test file organization → see `docs/ui-design.md` §11
 
 ### Phase 3 – Portal MVP Implementation
-- [ ] Scaffold Next.js App Router project (`apps/portal` or root-level)
-- [ ] Set up TypeScript, Tailwind CSS, shadcn/ui
-- [ ] Set up Vitest for unit/integration tests
-- [ ] Set up Playwright for E2E tests
-- [ ] Implement global navigation and layout
-- [ ] Implement TopicPage component for MDX rendering
-- [ ] Implement Settings / Connections page (LLM + TTS config forms)
-- [ ] Implement Test Console / Diagnostics page
-- [ ] Create stubbed API route handlers (`/api/llm/test-connection`, `/api/tts/test-connection`, `/api/tests/run`)
-- [ ] Write unit, integration, and E2E tests for all MVP features
+- [x] Scaffold Next.js App Router project (`apps/portal` or root-level)
+- [x] Set up TypeScript, Tailwind CSS, shadcn/ui
+- [x] Set up Vitest for unit/integration tests
+- [x] Set up Playwright for E2E tests
+- [x] Implement global navigation and layout
+- [x] Implement TopicPage component for MDX rendering
+- [x] Implement Settings / Connections page (LLM + TTS config forms)
+- [x] Implement Test Console / Diagnostics page
+- [x] Create stubbed API route handlers (`/api/llm/test-connection`, `/api/tts/test-connection`, `/api/tests/run`)
+- [x] Write unit, integration, and E2E tests for all MVP features
 - [ ] Set up CI/CD pipeline (GitHub Actions)
 
 ### Phase 4 – Content & Practice Flows
