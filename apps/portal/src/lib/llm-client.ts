@@ -45,7 +45,7 @@ export interface LLMTestResult {
  * patterns but we normalise to the same path where possible.
  */
 function buildChatUrl(opts: LLMRequestOptions): string {
-  const base = opts.baseUrl.replace(/\/+$/, "");
+  const base = normalizeBaseUrl(opts.baseUrl);
 
   switch (opts.provider) {
     case "azure": {
@@ -57,6 +57,11 @@ function buildChatUrl(opts: LLMRequestOptions): string {
       // Ollama, llama-cpp, openai, custom → standard OpenAI-compatible path
       return `${base}/v1/chat/completions`;
   }
+}
+
+/** Remove trailing slashes from a URL. */
+function normalizeBaseUrl(url: string): string {
+  return url.replace(/\/+$/, "");
 }
 
 function buildHeaders(opts: LLMRequestOptions): Record<string, string> {

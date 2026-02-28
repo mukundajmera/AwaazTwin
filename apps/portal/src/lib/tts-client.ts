@@ -55,13 +55,18 @@ export interface TTSTestResult {
   message: string;
 }
 
+/** Remove trailing slashes from a URL. */
+function normalizeUrl(url: string): string {
+  return url.replace(/\/+$/, "");
+}
+
 /**
  * Test connectivity to the TTS server.
  */
 export async function testTTSConnection(
   opts: TTSRequestOptions,
 ): Promise<TTSTestResult> {
-  const base = opts.serverUrl.replace(/\/+$/, "");
+  const base = normalizeUrl(opts.serverUrl);
   const start = Date.now();
 
   try {
@@ -127,7 +132,7 @@ export async function speak(
   req: TTSSpeakRequest,
   opts: TTSRequestOptions,
 ): Promise<TTSSpeakResult> {
-  const base = opts.serverUrl.replace(/\/+$/, "");
+  const base = normalizeUrl(opts.serverUrl);
   const start = Date.now();
 
   const body: Record<string, unknown> = {
@@ -165,7 +170,7 @@ export async function cloneVoice(
   req: TTSCloneRequest,
   opts: TTSRequestOptions,
 ): Promise<TTSCloneResult> {
-  const base = opts.serverUrl.replace(/\/+$/, "");
+  const base = normalizeUrl(opts.serverUrl);
 
   const body = {
     audio_base64: req.audioBase64,
