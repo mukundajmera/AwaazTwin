@@ -725,7 +725,7 @@ Renders: template title, section, phase count, estimated total duration, "Start"
 
 ```typescript
 interface PracticeSessionPageProps {
-  searchParams: { template: string };
+  searchParams: { template: string; step?: string };
 }
 
 interface PracticeSessionState {
@@ -932,10 +932,10 @@ apps/portal/app/
 ├── layout.tsx                     # AppShell (sidebar + header + footer)
 ├── page.tsx                       # Home / dashboard
 ├── topics/
-│   ├── [section]/
-│   │   └── page.tsx               # Section listing (e.g., /topics/voice-cloning)
-│   └── [...slug]/
-│       └── page.tsx               # Topic page (e.g., /topics/voice-cloning/getting-started)
+│   └── [section]/
+│       ├── page.tsx               # Section listing (e.g., /topics/voice-cloning)
+│       └── [...slug]/
+│           └── page.tsx           # Topic page (e.g., /topics/voice-cloning/getting-started)
 ├── settings/
 │   └── page.tsx                   # Settings / Connections
 ├── tests/

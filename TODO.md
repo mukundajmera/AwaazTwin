@@ -9,7 +9,7 @@
 
 ### 🔴 Critical
 
-- **No application code exists yet.** The repo currently contains only `README.md`, `instruction.md`, and the Phase 0 docs. All application scaffolding (Next.js, package.json, TypeScript config, etc.) must be created from scratch in Phase 1–2.
+- **No application code exists yet.** The repo currently contains only `README.md`, `instruction.md`, and the Phase 0 docs. All application scaffolding (Next.js, package.json, TypeScript config, etc.) must be created from scratch in Phase 3.
 
 - **No test infrastructure.** There is no testing framework, test runner, or test files. Vitest, Playwright, and React Testing Library must all be set up before any feature work begins.
 

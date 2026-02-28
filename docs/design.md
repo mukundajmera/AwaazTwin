@@ -126,7 +126,7 @@ Browser → POST /api/llm/test-connection { baseUrl, model }
 
 **TTS voice cloning:**
 ```
-Browser → POST /api/tts/clone { audioFile, voiceName }
+Browser → POST /api/tts/clone (multipart/form-data: { audio, name, language })
        → API proxies to Coqui TTS Docker container
        → Returns { speakerId: "voice_abc123", status: "registered" }
        → Settings UI shows new voice in voice list
@@ -134,7 +134,7 @@ Browser → POST /api/tts/clone { audioFile, voiceName }
 
 **Test suite execution:**
 ```
-Browser → POST /api/tests/run { suite: "smoke" }
+Browser → POST /api/tests/run { suiteId: "smoke" }
        → API spawns: npx playwright test tests/smoke.spec.ts
        → Returns { runId: "run_123", status: "running" }
        → Browser polls GET /api/tests/status?runId=run_123
@@ -184,12 +184,20 @@ interface PracticeTemplate {
   id: string;
   /** Display name */
   title: string;
+  /** Brief description for listings and cards */
+  description: string;
   /** Which section this belongs to */
   section: ContentSection;
   /** Ordered list of timed phases */
   phases: PracticePhase[];
   /** Scoring rubric dimensions */
   rubric: RubricDimension[];
+  /**
+   * Estimated total duration in seconds.
+   * Computed field: sum of `phases[].durationSeconds`.
+   * Not stored — derived at load time for display in PracticeTemplateCard.
+   */
+  // estimatedDurationSeconds: number; (computed, not persisted)
 }
 
 interface PracticePhase {
@@ -709,6 +717,8 @@ Retrieve current app settings.
 ```
 
 > **Note:** API keys are never returned in GET responses. They are write-only fields.
+>
+> **UI preferences clarification:** The `ui` sub-object (`theme`, `sidebarCollapsed`) is stored **both** in the server-side JSON file (as part of `AppSettings`) and mirrored to browser `localStorage` for instant client-side reads. The canonical source is the server file; `GET /api/settings` returns it. On page load, the client reads `localStorage` first for a flash-free experience, then reconciles with the server response. Writes go to both `PUT /api/settings` and `localStorage` simultaneously.
 
 #### `PUT /api/settings`
 
@@ -751,6 +761,13 @@ Trigger a test suite and return a run ID for status polling.
 }
 ```
 
+**Security / validation requirements:**
+
+- This endpoint may start OS-level test runner processes (e.g., `npx playwright test ...`) on the server. It **must only be reachable from localhost or a strictly trusted internal network** and **must never be exposed to the public internet**.
+- The server **must validate** the `suiteId` field against a fixed allowlist of registered test suite IDs (e.g., `["smoke", "api", "llm-integration", "tts-integration", "practice-flow"]`). Requests with any other `suiteId` must be rejected with `400 Bad Request`.
+- Implementations must **not** interpolate raw `suiteId` (or any other user-controlled input) directly into shell command strings. Instead, map each allowed `suiteId` to a pre-defined command configuration on the server.
+- Access to this endpoint should be restricted to trusted users (e.g., via admin-only auth or "local-only" use) and protected with basic **rate limiting** to prevent abuse.
+
 #### `GET /api/tests/status?runId=run_abc123`
 
 Poll the status of a running test suite.
@@ -787,6 +804,12 @@ Poll the status of a running test suite.
 }
 ```
 
+**Log handling strategy:**
+
+- The `logs` field returns only the **last 10 KB** of log output. If the full log exceeds this limit, it is truncated from the beginning and prefixed with `[...truncated]\n`.
+- Clients that need the full log should request it separately via `GET /api/tests/status?runId=<id>&fullLogs=true` (returns the complete log as `text/plain`).
+- During polling (status `"running"`), logs contain only the latest progress line (e.g., `"Running test 4 of 6..."`), not the full accumulated output. The complete log is available only after the run finishes.
+
 ### Available Test Suites (Static Registry)
 
 | Suite ID | Name | Command | Est. Duration | Requires External |
@@ -809,7 +832,8 @@ All LLM backends are accessed through a single abstraction. This ensures the Set
 interface LLMClient {
   /**
    * Test connectivity to the LLM backend.
-   * Returns status and latency; throws on connection failure.
+   * Always resolves with an LLMConnectionResult (status "ok" or "error");
+   * never throws for expected connection failures.
    */
   testConnection(): Promise<LLMConnectionResult>;
 
@@ -1207,7 +1231,7 @@ The `/api/tests/run` handler:
 
 ### CI Integration
 
-GitHub Actions workflow (to be created in Phase 2):
+GitHub Actions workflow (to be created in Phase 3):
 
 The monorepo uses **npm workspaces** with a root `package.json` that references `apps/portal`. CI commands use `npm -w apps/portal` to target the portal workspace.
 
