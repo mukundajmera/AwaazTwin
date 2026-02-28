@@ -11,6 +11,7 @@ TODO:
 from __future__ import annotations
 
 import logging
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -42,8 +43,10 @@ def prepare_voice(voice_profile_id: str, engine_name: str, sample_keys: list[str
     for key in sample_keys:
         # TODO: Download from object storage using backend.storage.download_file.
         logger.info("  downloading sample %s", key)
-        raw_path = Path(tempfile.mktemp(suffix=".raw", prefix="vp_"))
+        fd, tmp = tempfile.mkstemp(suffix=".raw", prefix="vp_")
+        raw_path = Path(tmp)
         raw_path.write_bytes(b"\x00" * 100)  # placeholder
+        os.close(fd)
 
         # Convert to WAV via ffmpeg
         wav_path = raw_path.with_suffix(".wav")

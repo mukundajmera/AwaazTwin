@@ -59,8 +59,10 @@ class OpenVoiceEngineAdapter(EngineAdapter):
             [s.name for s in samples],
         )
         # TODO: Extract tone-colour embedding from samples.
-        embedding_path = Path(tempfile.mktemp(suffix=".pth", prefix="ov_emb_"))
+        fd, tmp = tempfile.mkstemp(suffix=".pth", prefix="ov_emb_")
+        embedding_path = Path(tmp)
         embedding_path.write_bytes(b"\x00" * 64)
+        __import__("os").close(fd)
         return VoiceEmbeddingRef(
             engine_name=self.name,
             embedding_path=embedding_path,
@@ -80,6 +82,8 @@ class OpenVoiceEngineAdapter(EngineAdapter):
             params,
         )
         # TODO: Run OpenVoice inference, write real audio to output_path.
-        output_path = Path(tempfile.mktemp(suffix=".wav", prefix="ov_out_"))
+        fd, tmp = tempfile.mkstemp(suffix=".wav", prefix="ov_out_")
+        output_path = Path(tmp)
         output_path.write_bytes(_WAV_HEADER)
+        __import__("os").close(fd)
         return output_path

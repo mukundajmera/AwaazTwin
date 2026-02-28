@@ -12,6 +12,7 @@ TODO:
 from __future__ import annotations
 
 import logging
+import os
 import tempfile
 from pathlib import Path
 from uuid import UUID
@@ -46,9 +47,11 @@ def run_synthesis(job_id: str, engine_name: str, voice_profile_id: str,
     from backend.engines.base import VoiceEmbeddingRef
     from backend.engines.factory import get_engine_adapter
 
+    fd, tmp = tempfile.mkstemp(suffix=".pth")
+    os.close(fd)
     voice_ref = VoiceEmbeddingRef(
         engine_name=engine_name,
-        embedding_path=Path(tempfile.mktemp(suffix=".pth")),
+        embedding_path=Path(tmp),
         metadata={},
     )
 

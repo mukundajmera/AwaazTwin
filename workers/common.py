@@ -10,7 +10,7 @@ from redis import Redis
 from backend.config import get_config
 
 
-def get_redis_connection() -> Redis:  # type: ignore[type-arg]
+def get_redis_connection() -> "Redis[bytes]":
     """Return a Redis connection using the app config."""
     cfg = get_config()
     return Redis.from_url(cfg.redis.url)

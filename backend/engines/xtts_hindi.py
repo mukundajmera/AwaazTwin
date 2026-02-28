@@ -60,8 +60,10 @@ class XTTSHindiEngineAdapter(EngineAdapter):
             [s.name for s in samples],
         )
         # TODO: Run speaker-encoder on samples, store embedding to disk.
-        embedding_path = Path(tempfile.mktemp(suffix=".pth", prefix="xtts_emb_"))
+        fd, tmp = tempfile.mkstemp(suffix=".pth", prefix="xtts_emb_")
+        embedding_path = Path(tmp)
         embedding_path.write_bytes(b"\x00" * 64)  # dummy embedding
+        __import__("os").close(fd)
         return VoiceEmbeddingRef(
             engine_name=self.name,
             embedding_path=embedding_path,
@@ -81,6 +83,8 @@ class XTTSHindiEngineAdapter(EngineAdapter):
             params,
         )
         # TODO: Run XTTS inference, write real audio to output_path.
-        output_path = Path(tempfile.mktemp(suffix=".wav", prefix="xtts_out_"))
+        fd, tmp = tempfile.mkstemp(suffix=".wav", prefix="xtts_out_")
+        output_path = Path(tmp)
         output_path.write_bytes(_WAV_HEADER)
+        __import__("os").close(fd)
         return output_path

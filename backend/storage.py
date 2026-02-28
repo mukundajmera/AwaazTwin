@@ -4,16 +4,20 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import boto3
 from botocore.client import Config as BotoConfig
+
+if TYPE_CHECKING:
+    import botocore.client
 
 from backend.config import get_config
 
 logger = logging.getLogger(__name__)
 
 
-def _get_s3_client():  # type: ignore[no-untyped-def]
+def _get_s3_client() -> "botocore.client.BaseClient":
     """Create a boto3 S3 client configured for the storage backend."""
     cfg = get_config().storage
     return boto3.client(
