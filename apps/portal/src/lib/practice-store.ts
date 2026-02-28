@@ -1,8 +1,11 @@
 import fs from "fs";
 import path from "path";
+import os from "os";
 import { PracticeSession } from "./types";
 
-const defaultStorePath = path.join(process.cwd(), ".data", "practice-sessions.json");
+const defaultStorePath = process.env.PRACTICE_STORE_PATH
+  ? path.resolve(process.env.PRACTICE_STORE_PATH)
+  : path.join(process.cwd(), ".data", "practice-sessions.json");
 
 function ensureStoreDir(storePath: string): void {
   const dir = path.dirname(storePath);
@@ -26,7 +29,9 @@ function writeSessions(
   storePath: string = defaultStorePath
 ): void {
   ensureStoreDir(storePath);
-  fs.writeFileSync(storePath, JSON.stringify(sessions, null, 2), "utf-8");
+  const tmpPath = storePath + ".tmp." + process.pid;
+  fs.writeFileSync(tmpPath, JSON.stringify(sessions, null, 2), "utf-8");
+  fs.renameSync(tmpPath, storePath);
 }
 
 export function getAllSessions(

@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { sessionId, scores, notes } = body as {
     sessionId?: string;
-    scores?: Record<string, number>;
+    scores?: Record<string, unknown>;
     notes?: string;
   };
 
@@ -24,10 +24,21 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  session.completedAt = new Date().toISOString();
+  if (session.status !== "completed" || !session.completedAt) {
+    session.completedAt = new Date().toISOString();
+  }
   session.status = "completed";
-  if (scores && typeof scores === "object") {
-    session.scores = scores;
+
+  if (scores && typeof scores === "object" && scores !== null && !Array.isArray(scores)) {
+    const validScores: Record<string, number> = {};
+    for (const [key, value] of Object.entries(scores)) {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        validScores[key] = value;
+      }
+    }
+    if (Object.keys(validScores).length > 0) {
+      session.scores = validScores;
+    }
   }
   if (typeof notes === "string") {
     session.notes = notes;

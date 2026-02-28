@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { practiceTemplates } from "@/lib/practice-templates";
+import type { PracticeCategory } from "@/lib/types";
 
-const categoryLabels: Record<string, string> = {
+const categoryLabels: Record<PracticeCategory, string> = {
   "voice-cloning": "Voice Cloning",
   "tts-pipeline": "TTS Pipeline",
   architecture: "Architecture",
@@ -12,8 +13,9 @@ export default function PracticePage() {
     <div data-testid="practice-page">
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Practice Mode</h1>
       <p className="text-gray-600 mb-8">
-        Choose a practice template to start a guided, timed session with
-        self-scoring rubrics. Each session walks you through structured phases.
+        Choose a practice template to start a guided session with self-scoring
+        rubrics. Each session walks you through structured phases with suggested
+        durations.
       </p>
 
       <div className="grid gap-4">

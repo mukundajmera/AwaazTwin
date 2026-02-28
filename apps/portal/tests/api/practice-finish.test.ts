@@ -63,7 +63,6 @@ describe("POST /api/practice/finish", () => {
       templateId: "basic-voice-clone",
       startedAt: "2025-01-15T10:00:00Z",
       completedAt: null,
-      currentPhaseIndex: 0,
       scores: {},
       notes: "",
       status: "in-progress",

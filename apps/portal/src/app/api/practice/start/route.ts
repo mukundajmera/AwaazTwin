@@ -28,7 +28,6 @@ export async function POST(request: NextRequest) {
     templateId,
     startedAt: new Date().toISOString(),
     completedAt: null,
-    currentPhaseIndex: 0,
     scores: {},
     notes: "",
     status: "in-progress",

@@ -103,7 +103,6 @@ export interface PracticeSession {
   templateId: string;
   startedAt: string;
   completedAt: string | null;
-  currentPhaseIndex: number;
   scores: Record<string, number>;
   notes: string;
   status: "in-progress" | "completed";
