@@ -33,7 +33,10 @@ export async function POST(request: NextRequest) {
   const runId = crypto.randomUUID();
   const startedAt = new Date().toISOString();
 
-  // Execute the test command in the portal directory
+  // Execute the test command in the portal directory.
+  // SECURITY: `suite.command` comes from the hardcoded `testSuites` constant in
+  // `@/lib/test-suites` – it is never derived from user input.  The `suiteId`
+  // parameter is only used as a lookup key into that constant array.
   const portalDir = path.resolve(process.cwd());
   const command = suite.command;
 

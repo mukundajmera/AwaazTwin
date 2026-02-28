@@ -22,11 +22,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const result = await testTTSConnection({ serverUrl });
+  try {
+    const result = await testTTSConnection({ serverUrl });
 
-  if (result.status === "error") {
-    return NextResponse.json(result, { status: 502 });
+    if (result.status === "error") {
+      return NextResponse.json(result, { status: 502 });
+    }
+
+    return NextResponse.json(result);
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Unknown error testing TTS connection";
+    return NextResponse.json(
+      { status: "error", latencyMs: 0, serverUrl, availableModels: [], message },
+      { status: 502 }
+    );
   }
-
-  return NextResponse.json(result);
 }
