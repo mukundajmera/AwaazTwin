@@ -17,7 +17,6 @@ TODO: Replace dummy logic with real OpenVoice loading and inference:
 from __future__ import annotations
 
 import logging
-import struct
 import wave
 from pathlib import Path
 from typing import Any
@@ -126,9 +125,7 @@ def _write_silent_wav(
 ) -> None:
     """Write a valid silent WAV file."""
     n_frames = int(sample_rate * duration_sec)
-    silent_data = struct.pack(
-        f"<{n_frames * channels}h", *([0] * (n_frames * channels))
-    )
+    silent_data = bytes(n_frames * channels * sample_width)
     with wave.open(str(path), "wb") as wf:
         wf.setnchannels(channels)
         wf.setsampwidth(sample_width)

@@ -92,6 +92,14 @@ def _get_default_engine_config() -> EngineConfig:
     )
 
 
+def _find_engine_config_by_name(engine_name: str) -> EngineConfig:
+    """Find an engine config matching *engine_name*, or fall back to defaults."""
+    for cfg in load_engine_configs_from_env():
+        if cfg.name == engine_name and cfg.enabled:
+            return cfg
+    return _get_default_engine_config()
+
+
 @app.task(
     bind=True,
     name="backend.workers.voice_prep_worker.prepare_voice_profile",
@@ -131,12 +139,7 @@ def prepare_voice_profile(
     try:
         config = _get_default_engine_config()
         if engine_name:
-            config = EngineConfig(
-                name=engine_name,
-                engine_type=config.engine_type,
-                model_path=config.model_path,
-                device=config.device,
-            )
+            config = _find_engine_config_by_name(engine_name)
 
         adapter = get_engine_adapter(config)
 
