@@ -1,14 +1,14 @@
 """
 Engine configuration model.
 
-``EngineConfig`` can be populated from a YAML config file
-(``awaaztwin.yaml``) or from environment variables.
+``EngineConfig`` instances in this module are typically populated
+from environment variables.
 """
 
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass

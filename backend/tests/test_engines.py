@@ -69,6 +69,20 @@ class TestEngineConfig:
 
 
 class TestLoadEngineConfigsFromEnv:
+    @pytest.fixture(autouse=True)
+    def _clean_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Ensure AWAAZTWIN_ENGINE_* vars are cleared so tests don't
+        depend on CI/dev environment variables."""
+        for var in (
+            "AWAAZTWIN_ENGINE_XTTS_HI_PATH",
+            "AWAAZTWIN_ENGINE_XTTS_HI_DEVICE",
+            "AWAAZTWIN_ENGINE_XTTS_HI_ENABLED",
+            "AWAAZTWIN_ENGINE_OPENVOICE_PATH",
+            "AWAAZTWIN_ENGINE_OPENVOICE_DEVICE",
+            "AWAAZTWIN_ENGINE_OPENVOICE_ENABLED",
+        ):
+            monkeypatch.delenv(var, raising=False)
+
     def test_returns_two_defaults(self) -> None:
         configs = load_engine_configs_from_env()
         assert len(configs) == 2
@@ -102,6 +116,12 @@ class TestLoadEngineConfigsFromEnv:
 
 
 class TestGetEngineAdapter:
+    @pytest.fixture(autouse=True)
+    def _clear_cache(self) -> None:
+        """Clear the adapter cache between tests."""
+        from backend.engines.factory import _ADAPTER_CACHE
+        _ADAPTER_CACHE.clear()
+
     def test_returns_xtts_adapter(self) -> None:
         cfg = EngineConfig(name="XTTS_HI", engine_type="xtts")
         adapter = get_engine_adapter(cfg)
@@ -118,6 +138,13 @@ class TestGetEngineAdapter:
         cfg = EngineConfig(name="BOGUS", engine_type="unknown_engine")
         with pytest.raises(ValueError, match="Unknown engine type"):
             get_engine_adapter(cfg)
+
+    def test_caches_adapter_instances(self) -> None:
+        """Same config should return the same adapter instance."""
+        cfg = EngineConfig(name="XTTS_HI", engine_type="xtts", device="cpu")
+        adapter_a = get_engine_adapter(cfg)
+        adapter_b = get_engine_adapter(cfg)
+        assert adapter_a is adapter_b
 
 
 # ---------------------------------------------------------------

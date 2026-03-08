@@ -17,6 +17,7 @@ TODO: Replace dummy logic with real OpenVoice loading and inference:
 from __future__ import annotations
 
 import logging
+import uuid
 import wave
 from pathlib import Path
 from typing import Any
@@ -105,10 +106,8 @@ class OpenVoiceEngineAdapter(EngineAdapter):
         output_dir = Path(self._config.model_path) / "outputs"
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        import hashlib
-
-        text_hash = hashlib.sha256(text.encode()).hexdigest()[:12]
-        output_path = output_dir / f"synth_{text_hash}.wav"
+        unique_id = uuid.uuid4().hex[:16]
+        output_path = output_dir / f"synth_{unique_id}.wav"
 
         _write_silent_wav(output_path, duration_sec=1.0)
 

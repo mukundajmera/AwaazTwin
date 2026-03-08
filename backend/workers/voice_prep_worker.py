@@ -19,6 +19,7 @@ Run standalone::
 from __future__ import annotations
 
 import logging
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -34,12 +35,33 @@ def _download_file(uri: str, dest: Path) -> Path:
     """Download a file from object storage to *dest*.
 
     TODO: integrate with a real storage helper (boto3 / MinIO client).
-    For now, if *uri* is a local path it is returned directly;
-    otherwise a placeholder log is emitted.
+
+    Local filesystem paths are only accepted when
+    ``AWAAZTWIN_UPLOAD_BASE_DIR`` is configured, and the resolved path
+    must reside within that directory to prevent arbitrary file access
+    and directory traversal attacks.
     """
+    upload_base = os.environ.get("AWAAZTWIN_UPLOAD_BASE_DIR")
     local = Path(uri)
-    if local.exists():
-        return local
+
+    # Resolve the path to catch directory traversal (e.g. ../../etc/passwd)
+    resolved = local.resolve()
+
+    if (local.is_absolute() or local.exists()) and upload_base:
+        base = Path(upload_base).resolve()
+        if resolved.is_relative_to(base) and resolved.exists():
+            return resolved
+        raise ValueError(
+            f"Path {uri!r} resolves outside the configured upload "
+            f"base directory ({base})"
+        )
+
+    if local.is_absolute() or ".." in local.parts:
+        raise ValueError(
+            f"Local filesystem paths are not allowed without "
+            f"AWAAZTWIN_UPLOAD_BASE_DIR being configured: {uri!r}"
+        )
+
     logger.info("[voice-prep] Would download %s → %s (stub)", uri, dest)
     # Create a tiny placeholder so downstream code does not crash
     dest.write_bytes(b"")
@@ -53,6 +75,16 @@ def _convert_to_wav(source: Path, output_dir: Path) -> Path:
     warning (useful for testing without ffmpeg installed).
     """
     wav_path = output_dir / (source.stem + ".wav")
+
+    # Avoid in-place read/write if the source is already the target path.
+    if wav_path.resolve() == source.resolve():
+        logger.info(
+            "[voice-prep] Source %s is already at canonical path; "
+            "skipping conversion",
+            source,
+        )
+        return source
+
     try:
         subprocess.run(
             [
@@ -92,12 +124,31 @@ def _get_default_engine_config() -> EngineConfig:
     )
 
 
-def _find_engine_config_by_name(engine_name: str) -> EngineConfig:
-    """Find an engine config matching *engine_name*, or fall back to defaults."""
-    for cfg in load_engine_configs_from_env():
+def _find_engine_config_by_name(engine_name: str | None) -> EngineConfig:
+    """Resolve an engine config.
+
+    If *engine_name* is ``None``, return a default enabled engine
+    configuration (matching the behavior of ``_get_default_engine_config``).
+    If *engine_name* is provided explicitly, return the matching enabled
+    config, or raise if no such enabled config exists.
+    """
+    configs = list(load_engine_configs_from_env())
+
+    # No explicit override: behave like "pick a sensible default".
+    if engine_name is None:
+        for cfg in configs:
+            if cfg.enabled:
+                return cfg
+        return _get_default_engine_config()
+
+    # Explicit override: require a matching enabled config.
+    for cfg in configs:
         if cfg.name == engine_name and cfg.enabled:
             return cfg
-    return _get_default_engine_config()
+
+    raise ValueError(
+        f"Requested voice engine '{engine_name}' is not configured or not enabled"
+    )
 
 
 @app.task(
@@ -137,9 +188,7 @@ def prepare_voice_profile(
     )
 
     try:
-        config = _get_default_engine_config()
-        if engine_name:
-            config = _find_engine_config_by_name(engine_name)
+        config = _find_engine_config_by_name(engine_name)
 
         adapter = get_engine_adapter(config)
 

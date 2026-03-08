@@ -21,11 +21,17 @@ from backend.engines.config import EngineConfig
 
 @pytest.fixture(autouse=True)
 def _use_tmp_model_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Point engine model paths to a writable temp directory."""
+    """Point engine model paths to a writable temp directory and
+    clear the adapter cache between tests."""
     model_dir = tmp_path / "models" / "xtts-hindi"
     model_dir.mkdir(parents=True)
     monkeypatch.setenv("AWAAZTWIN_ENGINE_XTTS_HI_PATH", str(model_dir))
     monkeypatch.setenv("AWAAZTWIN_ENGINE_OPENVOICE_PATH", str(tmp_path / "models" / "openvoice"))
+    # Allow local file access for tests
+    monkeypatch.setenv("AWAAZTWIN_UPLOAD_BASE_DIR", str(tmp_path))
+    # Clear adapter cache so each test gets a fresh adapter
+    from backend.engines.factory import _ADAPTER_CACHE
+    _ADAPTER_CACHE.clear()
 
 
 # ---------------------------------------------------------------
@@ -134,6 +140,21 @@ class TestSynthesisWorker:
 
         assert result["status"] == "completed"
 
+    def test_synthesis_rejects_engine_mismatch(self, tmp_path: Path) -> None:
+        """Synthesis should fail when voice embedding engine doesn't
+        match the requested engine."""
+        ref = VoiceEmbeddingRef(
+            engine_name="OPENVOICE_V2",
+            embedding_path=str(tmp_path / "emb.json"),
+        )
+
+        from backend.workers.synthesis_worker import run_synthesis
+
+        with pytest.raises(Exception):
+            run_synthesis.apply(
+                args=["job-004", "Test mismatch", ref.to_json(), "XTTS_HI"],
+            ).get()
+
 
 # ---------------------------------------------------------------
 # Helpers
@@ -142,11 +163,9 @@ class TestSynthesisWorker:
 
 def _write_test_wav(path: Path) -> None:
     """Write a minimal valid WAV file for testing."""
-    import struct
-
     sample_rate = 22050
     n_frames = sample_rate  # 1 second
-    data = struct.pack(f"<{n_frames}h", *([0] * n_frames))
+    data = bytes(n_frames * 2)  # Zero-filled bytes representing 16-bit PCM silence
     with wave.open(str(path), "wb") as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)

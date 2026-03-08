@@ -42,12 +42,17 @@ def _upload_file(local_path: Path, dest_uri: str) -> str:
 
 
 def _find_engine_config(engine_name: str) -> EngineConfig:
-    """Find the matching ``EngineConfig`` or fall back to defaults."""
+    """Find the matching ``EngineConfig``.
+
+    Raises ``ValueError`` when the requested engine is not configured
+    or not enabled, so that misconfiguration / typos surface
+    immediately instead of silently falling back to a different engine.
+    """
     for cfg in load_engine_configs_from_env():
         if cfg.name == engine_name and cfg.enabled:
             return cfg
-    return EngineConfig(
-        name="XTTS_HI", engine_type="xtts", model_path="/models/xtts-hindi"
+    raise ValueError(
+        f"Requested engine '{engine_name}' is not configured or not enabled"
     )
 
 
@@ -101,6 +106,15 @@ def run_synthesis(
         adapter = get_engine_adapter(config)
 
         voice_ref = VoiceEmbeddingRef.from_json(voice_embedding_json)
+
+        # Validate that the voice embedding matches the selected engine.
+        if voice_ref.engine_name != config.name:
+            raise ValueError(
+                f"Voice embedding was created by engine "
+                f"'{voice_ref.engine_name}' but synthesis was requested "
+                f"with engine '{config.name}'. These must match."
+            )
+
         output_path = adapter.synthesize(text, voice_ref, params or {})
 
         duration_sec = round(time.monotonic() - start, 3)
