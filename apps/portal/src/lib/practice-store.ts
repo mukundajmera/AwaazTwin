@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import os from "os";
 import { PracticeSession } from "./types";
 
 const defaultStorePath = process.env.PRACTICE_STORE_PATH

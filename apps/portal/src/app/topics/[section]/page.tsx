@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getAllTopics } from "@/lib/content";
-import { ContentSection } from "@/lib/types";
 
 const sectionNames: Record<string, string> = {
   "voice-cloning": "Voice Cloning",

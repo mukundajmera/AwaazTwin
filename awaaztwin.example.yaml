@@ -1,0 +1,38 @@
+# AwaazTwin configuration
+# Copy to awaaztwin.yaml and adjust values for your environment.
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  reload: false
+  log_level: "info"
+
+database:
+  url: "postgresql+asyncpg://postgres:postgres@localhost:5432/awaaztwin"
+
+redis:
+  url: "redis://localhost:6379/0"
+
+storage:
+  endpoint: "http://localhost:9000"
+  access_key: "minioadmin"
+  secret_key: "minioadmin"
+  bucket: "awaaztwin"
+  region: "us-east-1"
+  secure: false
+
+engines:
+  - name: "xtts-hindi"
+    enabled: true
+    device: "auto"          # auto-detects cuda > mps > cpu
+    options: {}
+  - name: "openvoice"
+    enabled: false
+    device: "auto"
+    options: {}
+
+limits:
+  max_samples_per_voice: 10
+  max_sample_size_mb: 50
+  max_text_length: 5000
+  max_concurrent_jobs: 4
