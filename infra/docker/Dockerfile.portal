@@ -31,7 +31,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 # Copy standalone output if available, otherwise copy full build
 COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=build --chown=nextjs:nodejs /app/public ./public 2>/dev/null || true
+COPY --from=build --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 

@@ -68,6 +68,12 @@ class TestAppConfig:
         assert cfg.server.port == 9000
         assert len(cfg.engines) == 2
 
+    def test_env_overrides_init_kwargs(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Environment variables must take precedence over init kwargs (YAML)."""
+        monkeypatch.setenv("AWAAZTWIN_SERVER_PORT", "9999")
+        cfg = AppConfig(server=ServerConfig(port=8080))
+        assert cfg.server.port == 9999
+
 
 class TestDetectDevice:
     def test_returns_string(self) -> None:

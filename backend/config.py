@@ -4,18 +4,22 @@ Resolution order (highest priority first):
     1. Environment variables prefixed with ``AWAAZTWIN_`` (nested with ``__``).
     2. Values in ``awaaztwin.yaml`` (or path set by ``AWAAZTWIN_CONFIG_PATH``).
     3. Defaults defined in the Pydantic model below.
+
+Every settings class uses ``settings_customise_sources`` to ensure env vars
+always take precedence over init kwargs (which carry YAML-loaded values).
 """
 
 from __future__ import annotations
 
 import functools
 import logging
+import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Tuple
 
 import yaml
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +28,29 @@ _DEFAULT_CONFIG_PATH = Path("awaaztwin.yaml")
 
 
 # ---------------------------------------------------------------------------
+# Base with env > init precedence
+# ---------------------------------------------------------------------------
+
+class _EnvFirstSettings(BaseSettings):
+    """BaseSettings subclass that always resolves env vars before init kwargs."""
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+        return (env_settings, init_settings, file_secret_settings)
+
+
+# ---------------------------------------------------------------------------
 # Sub-models
 # ---------------------------------------------------------------------------
 
-class ServerConfig(BaseSettings):
+class ServerConfig(_EnvFirstSettings):
     model_config = SettingsConfigDict(env_prefix="AWAAZTWIN_SERVER_")
     host: str = "0.0.0.0"
     port: int = 8000
@@ -35,7 +58,7 @@ class ServerConfig(BaseSettings):
     log_level: str = "info"
 
 
-class StorageConfig(BaseSettings):
+class StorageConfig(_EnvFirstSettings):
     model_config = SettingsConfigDict(env_prefix="AWAAZTWIN_STORAGE_")
     endpoint: str = "http://localhost:9000"
     access_key: str = "minioadmin"
@@ -45,7 +68,7 @@ class StorageConfig(BaseSettings):
     secure: bool = False
 
 
-class EngineEntry(BaseSettings):
+class EngineEntry(_EnvFirstSettings):
     model_config = SettingsConfigDict(env_prefix="AWAAZTWIN_ENGINE_")
     name: str = "xtts-hindi"
     enabled: bool = True
@@ -53,7 +76,7 @@ class EngineEntry(BaseSettings):
     options: dict[str, Any] = Field(default_factory=dict)
 
 
-class LimitsConfig(BaseSettings):
+class LimitsConfig(_EnvFirstSettings):
     model_config = SettingsConfigDict(env_prefix="AWAAZTWIN_LIMITS_")
     max_samples_per_voice: int = 10
     max_sample_size_mb: int = 50
@@ -61,22 +84,26 @@ class LimitsConfig(BaseSettings):
     max_concurrent_jobs: int = 4
 
 
-class DatabaseConfig(BaseSettings):
+class DatabaseConfig(_EnvFirstSettings):
     model_config = SettingsConfigDict(env_prefix="AWAAZTWIN_DB_")
     url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/awaaztwin"
 
 
-class RedisConfig(BaseSettings):
+class RedisConfig(_EnvFirstSettings):
     model_config = SettingsConfigDict(env_prefix="AWAAZTWIN_REDIS_")
     url: str = "redis://localhost:6379/0"
 
 
 # ---------------------------------------------------------------------------
-# Root config
+# Root config – env vars > YAML (init kwargs) > defaults
 # ---------------------------------------------------------------------------
 
-class AppConfig(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="AWAAZTWIN_")
+class AppConfig(_EnvFirstSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="AWAAZTWIN_",
+        env_nested_delimiter="__",
+    )
+
     server: ServerConfig = Field(default_factory=ServerConfig)
     storage: StorageConfig = Field(default_factory=StorageConfig)
     engines: list[EngineEntry] = Field(default_factory=lambda: [EngineEntry()])
@@ -115,9 +142,13 @@ def _load_yaml(path: Path) -> dict[str, Any]:
 
 @functools.lru_cache(maxsize=1)
 def get_config() -> AppConfig:
-    """Return the singleton ``AppConfig``, loading from YAML + env vars."""
-    import os
+    """Return the singleton ``AppConfig``, loading from YAML + env vars.
 
+    YAML values are passed as *init kwargs* and env vars are read by
+    pydantic-settings automatically.  Because every settings class places
+    ``env_settings`` before ``init_settings``, environment variables always
+    win over YAML values.
+    """
     yaml_path = Path(os.environ.get(_CONFIG_PATH_ENV, str(_DEFAULT_CONFIG_PATH)))
     yaml_data = _load_yaml(yaml_path)
     return AppConfig(**yaml_data)
