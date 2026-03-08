@@ -1,0 +1,145 @@
+x-backend-common: &backend-common
+  build:
+    context: .
+    dockerfile: infra/docker/Dockerfile.backend
+  env_file: .env
+  restart: unless-stopped
+  networks:
+    - awaaztwin
+  volumes:
+    - models:/app/models
+
+services:
+  # ---------- Backend API ----------
+  api:
+    <<: *backend-common
+    container_name: awaaztwin-api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    # Uncomment below for GPU support (requires nvidia-container-toolkit)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # ---------- Workers ----------
+  worker_voice_prep:
+    <<: *backend-common
+    container_name: awaaztwin-worker-voice-prep
+    command: ["python", "-m", "rq.cli", "worker", "voice-prep", "--url", "${AWAAZTWIN_REDIS_URL:-redis://redis:6379/0}"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  worker_synthesis:
+    <<: *backend-common
+    container_name: awaaztwin-worker-synthesis
+    command: ["python", "-m", "rq.cli", "worker", "synthesis", "--url", "${AWAAZTWIN_REDIS_URL:-redis://redis:6379/0}"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # ---------- Frontend ----------
+  portal:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.portal
+    container_name: awaaztwin-portal
+    ports:
+      - "${PORTAL_PORT:-3000}:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:8000
+    restart: unless-stopped
+    networks:
+      - awaaztwin
+    depends_on:
+      - api
+
+  # ---------- Data stores ----------
+  postgres:
+    image: postgres:16-alpine
+    container_name: awaaztwin-postgres
+    env_file: .env
+    environment:
+      POSTGRES_DB: awaaztwin
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d awaaztwin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - awaaztwin
+
+  redis:
+    image: redis:7-alpine
+    container_name: awaaztwin-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - awaaztwin
+
+  minio:
+    image: minio/minio
+    container_name: awaaztwin-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+    networks:
+      - awaaztwin
+
+networks:
+  awaaztwin:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
+  models:

@@ -9,8 +9,23 @@ playwright-report/
 
 # Python
 __pycache__/
-*.pyc
-*.pyo
-.pytest_cache/
+*.py[cod]
+*$py.class
 *.egg-info/
+*.egg
+.eggs/
+*.whl
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.so
+
+# AwaazTwin local config (may contain secrets)
+awaaztwin.yaml
+
+# Local data
 .data/
