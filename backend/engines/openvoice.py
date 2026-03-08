@@ -1,90 +1,132 @@
-"""Placeholder OpenVoice engine adapter.
+"""
+OpenVoice v2 engine adapter (placeholder).
 
-TODO: Replace stubs with real OpenVoice model loading and inference.
-      - Load the OpenVoice checkpoint on first call.
-      - Support tone-colour cloning from a short reference clip.
-      - Handle multi-lingual synthesis.
+This adapter wraps OpenVoice's tone-color converter + base TTS model.
+The current implementation is a **placeholder** that logs intended
+operations and produces dummy WAV files.
+
+TODO: Replace dummy logic with real OpenVoice loading and inference:
+  1. Load the OpenVoice tone-color converter checkpoint and base-TTS
+     model from ``config.model_path``.
+  2. In ``prepare_voice``, extract tone-color embeddings from the
+     reference audio samples and persist them.
+  3. In ``synthesize``, run the base TTS model to generate speech, then
+     apply the tone-color converter to match the target voice.
 """
 
 from __future__ import annotations
 
 import logging
-import os
-import struct
-import tempfile
+import uuid
+import wave
 from pathlib import Path
 from typing import Any
 
 from backend.engines.base import EngineAdapter, VoiceEmbeddingRef
+from backend.engines.config import EngineConfig
 
 logger = logging.getLogger(__name__)
 
-_WAV_HEADER = struct.pack(
-    "<4sI4s4sIHHIIHH4sI",
-    b"RIFF",
-    36,
-    b"WAVE",
-    b"fmt ",
-    16,
-    1,  # PCM
-    1,  # mono
-    22050,
-    44100,
-    2,
-    16,
-    b"data",
-    0,
-)
-
 
 class OpenVoiceEngineAdapter(EngineAdapter):
-    """OpenVoice tone-colour cloning adapter.
+    """Placeholder adapter for the OpenVoice v2 model."""
 
-    This is a **placeholder** – every method logs what it *would* do and returns
-    a dummy artefact so the rest of the pipeline can be exercised end-to-end
-    without a real model.
-    """
+    name = "OPENVOICE_V2"
 
-    def __init__(self, config: dict[str, Any] | None = None) -> None:
-        self._config = config or {}
-        # TODO: Load OpenVoice model checkpoint here
-
-    @property
-    def name(self) -> str:
-        return "openvoice"
-
-    async def prepare_voice(self, samples: list[Path]) -> VoiceEmbeddingRef:
+    def __init__(self, config: EngineConfig) -> None:
+        self._config = config
+        self._device = config.resolve_device()
         logger.info(
-            "[openvoice] prepare_voice called with %d sample(s): %s",
-            len(samples),
-            [s.name for s in samples],
-        )
-        # TODO: Extract tone-colour embedding from samples.
-        fd, tmp = tempfile.mkstemp(suffix=".pth", prefix="ov_emb_")
-        embedding_path = Path(tmp)
-        embedding_path.write_bytes(b"\x00" * 64)
-        os.close(fd)
-        return VoiceEmbeddingRef(
-            engine_name=self.name,
-            embedding_path=embedding_path,
-            metadata={"sample_count": len(samples)},
+            "OpenVoiceEngineAdapter initialised (device=%s, model_path=%s)",
+            self._device,
+            config.model_path,
         )
 
-    async def synthesize(
+    def prepare_voice(self, samples: list[Path]) -> VoiceEmbeddingRef:
+        """Create a dummy tone-color embedding reference.
+
+        TODO: load samples, extract OpenVoice tone-color embedding via
+        ``se_extractor.get_se()``, and persist the result.
+        """
+        logger.info(
+            "[OPENVOICE_V2] prepare_voice called with %d sample(s): %s",
+            len(samples),
+            [str(s) for s in samples],
+        )
+
+        embedding_dir = Path(self._config.model_path) / "embeddings"
+        embedding_dir.mkdir(parents=True, exist_ok=True)
+
+        import hashlib
+
+        sample_hash = hashlib.sha256(
+            "|".join(str(s) for s in samples).encode()
+        ).hexdigest()[:12]
+        embedding_path = embedding_dir / f"tone_{sample_hash}.json"
+        embedding_path.write_text(
+            '{"type": "openvoice_v2_placeholder", "samples": '
+            + str(len(samples))
+            + "}"
+        )
+
+        ref = VoiceEmbeddingRef(
+            engine_name=self.name,
+            embedding_path=str(embedding_path),
+            metadata={
+                "device": self._device,
+                "sample_count": len(samples),
+                "model_path": self._config.model_path,
+            },
+        )
+        logger.info(
+            "[OPENVOICE_V2] Tone-color embedding created at %s", embedding_path
+        )
+        return ref
+
+    def synthesize(
         self,
         text: str,
         voice_ref: VoiceEmbeddingRef,
         params: dict[str, Any] | None = None,
     ) -> Path:
+        """Generate a dummy WAV file.
+
+        TODO: run base TTS to generate speech, then apply the
+        tone-color converter using the stored embedding to match the
+        target voice timbre.
+        """
+        params = params or {}
         logger.info(
-            "[openvoice] synthesize called: text=%r, voice=%s, params=%s",
+            "[OPENVOICE_V2] synthesize called – text=%r, voice=%s, params=%s",
             text[:80],
-            voice_ref.embedding_path.name,
+            voice_ref.embedding_path,
             params,
         )
-        # TODO: Run OpenVoice inference, write real audio to output_path.
-        fd, tmp = tempfile.mkstemp(suffix=".wav", prefix="ov_out_")
-        output_path = Path(tmp)
-        output_path.write_bytes(_WAV_HEADER)
-        os.close(fd)
+
+        output_dir = Path(self._config.model_path) / "outputs"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        unique_id = uuid.uuid4().hex[:16]
+        output_path = output_dir / f"synth_{unique_id}.wav"
+
+        _write_silent_wav(output_path, duration_sec=1.0)
+
+        logger.info("[OPENVOICE_V2] Synthesised audio written to %s", output_path)
         return output_path
+
+
+def _write_silent_wav(
+    path: Path,
+    duration_sec: float = 1.0,
+    sample_rate: int = 22050,
+    channels: int = 1,
+    sample_width: int = 2,
+) -> None:
+    """Write a valid silent WAV file."""
+    n_frames = int(sample_rate * duration_sec)
+    silent_data = bytes(n_frames * channels * sample_width)
+    with wave.open(str(path), "wb") as wf:
+        wf.setnchannels(channels)
+        wf.setsampwidth(sample_width)
+        wf.setframerate(sample_rate)
+        wf.writeframes(silent_data)
