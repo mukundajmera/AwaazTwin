@@ -7,6 +7,7 @@ dist/
 test-results/
 playwright-report/
 awaaztwin.yaml
+
 # Python
 __pycache__/
 *.py[cod]
@@ -23,6 +24,9 @@ venv/
 htmlcov/
 .coverage
 *.so
+
+# AwaazTwin local config (may contain secrets)
+awaaztwin.yaml
 
 # Local data
 .data/
