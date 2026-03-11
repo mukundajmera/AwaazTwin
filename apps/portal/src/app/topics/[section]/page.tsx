@@ -9,8 +9,8 @@ const sectionNames: Record<string, string> = {
   "reference": "Reference",
 };
 
-export default async function SectionPage({ params }: { params: Promise<{ section: string }> }) {
-  const { section } = await params;
+export default async function SectionPage({ params }: { params: { section: string } }) {
+  const { section } = params;
   const allTopics = getAllTopics();
   const topics = allTopics.filter((t) => t.section === section);
   const sectionTitle = sectionNames[section] || section;

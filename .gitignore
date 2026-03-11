@@ -6,6 +6,7 @@ dist/
 *.tsbuildinfo
 test-results/
 playwright-report/
+awaaztwin.yaml
 
 # Python
 __pycache__/
