@@ -2,7 +2,6 @@
 #
 # Usage:
 #   docker compose up -d          # start all services
-#   docker compose up -d portal   # start portal only (if LLM/TTS run externally)
 #   docker compose logs -f        # follow logs
 #
 # GPU support for TTS (requires NVIDIA Container Toolkit):
@@ -25,15 +24,13 @@ services:
       - AWAAZTWIN_LLM_BASE_URL=${AWAAZTWIN_LLM_BASE_URL:-http://ollama:11434}
       - AWAAZTWIN_LLM_MODEL=${AWAAZTWIN_LLM_MODEL:-llama3.2}
       - AWAAZTWIN_TTS_SERVER_URL=${AWAAZTWIN_TTS_SERVER_URL:-http://coqui-tts:5002}
-    depends_on:
-      - ollama
     restart: unless-stopped
     networks:
       - awaaztwin
 
   # ── Ollama (LLM Backend – CPU) ─────────────────────────────────────
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.6.2
     ports:
       - "${OLLAMA_PORT:-11434}:11434"
     volumes:
@@ -44,7 +41,7 @@ services:
 
   # ── Coqui TTS (CPU mode, default) ─────────────────────────────────
   coqui-tts:
-    image: ghcr.io/coqui-ai/tts:latest
+    image: ghcr.io/coqui-ai/tts:v0.22.0
     ports:
       - "${TTS_PORT:-5002}:5002"
     volumes:
@@ -56,7 +53,7 @@ services:
 
   # ── Coqui TTS (GPU mode – requires NVIDIA Container Toolkit) ──────
   coqui-tts-gpu:
-    image: ghcr.io/coqui-ai/tts:latest
+    image: ghcr.io/coqui-ai/tts:v0.22.0
     profiles:
       - gpu
     ports:

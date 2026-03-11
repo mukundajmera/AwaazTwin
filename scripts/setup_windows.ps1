@@ -11,24 +11,39 @@ function Info($msg)  { Write-Host "-> $msg" -ForegroundColor Cyan }
 function Ok($msg)    { Write-Host "[OK] $msg" -ForegroundColor Green }
 function Warn($msg)  { Write-Host "[!] $msg" -ForegroundColor Yellow }
 
+# ── Check for winget ──────────────────────────────────────────────────
+$hasWinget = [bool](Get-Command winget -ErrorAction SilentlyContinue)
+if (-not $hasWinget) {
+    Warn "winget is not available on this system."
+    Warn "Install it from https://aka.ms/getwinget or use the Microsoft Store."
+    Warn "The script will skip automated package installs and provide manual links instead."
+}
+
 # ── Node.js ───────────────────────────────────────────────────────────
 if (Get-Command node -ErrorAction SilentlyContinue) {
     $nodeVer = & node -v
     Ok "Node.js $nodeVer already installed"
-} else {
+} elseif ($hasWinget) {
     Info "Node.js not found. Installing via winget..."
     winget install --id OpenJS.NodeJS.LTS --accept-package-agreements --accept-source-agreements
     if ($LASTEXITCODE -ne 0) {
         Warn "winget install failed. Download Node.js manually: https://nodejs.org"
     } else {
-        Ok "Node.js installed – restart your terminal to pick it up"
+        Ok "Node.js installed"
+        if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+            Warn "Node.js was installed but is not yet available in this session."
+            Warn "Please restart your terminal and re-run this script."
+            exit 0
+        }
     }
+} else {
+    Warn "Node.js not found. Install it from https://nodejs.org"
 }
 
 # ── ffmpeg ────────────────────────────────────────────────────────────
 if (Get-Command ffmpeg -ErrorAction SilentlyContinue) {
     Ok "ffmpeg already installed"
-} else {
+} elseif ($hasWinget) {
     Info "Installing ffmpeg via winget..."
     winget install --id Gyan.FFmpeg --accept-package-agreements --accept-source-agreements
     if ($LASTEXITCODE -ne 0) {
@@ -36,6 +51,8 @@ if (Get-Command ffmpeg -ErrorAction SilentlyContinue) {
     } else {
         Ok "ffmpeg installed"
     }
+} else {
+    Warn "ffmpeg not found. Download it from https://ffmpeg.org/download.html"
 }
 
 # ── Docker ────────────────────────────────────────────────────────────
@@ -50,11 +67,22 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
 # ── Install portal dependencies ───────────────────────────────────────
 $portalDir = Join-Path $PSScriptRoot "..\apps\portal"
 if (Test-Path $portalDir) {
-    Info "Installing portal dependencies..."
-    Push-Location $portalDir
-    npm install
-    Pop-Location
-    Ok "Portal dependencies installed"
+    if (Get-Command npm -ErrorAction SilentlyContinue) {
+        Info "Installing portal dependencies..."
+        Push-Location $portalDir
+        try {
+            npm install
+            Ok "Portal dependencies installed"
+        } catch {
+            Warn "npm install failed: $($_.Exception.Message)"
+            Warn "You can manually run 'npm install' in $portalDir after resolving the issue."
+        } finally {
+            Pop-Location
+        }
+    } else {
+        Warn "npm not found. Skipping portal dependency installation."
+        Warn "Install Node.js/npm from https://nodejs.org and then run 'npm install' in $portalDir."
+    }
 } else {
     Warn "Portal directory not found at $portalDir"
 }

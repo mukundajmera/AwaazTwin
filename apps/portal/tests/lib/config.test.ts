@@ -90,4 +90,41 @@ describe("config", () => {
     const cfg = getConfig();
     expect(cfg.env).toBe("local");
   });
+
+  it("ignores invalid AWAAZTWIN_LLM_PROVIDER and keeps default", async () => {
+    process.env.AWAAZTWIN_CONFIG = path.join(tmpDir, "nope.yaml");
+    process.env.AWAAZTWIN_LLM_PROVIDER = "bogus-provider";
+
+    const { getConfig, resetConfig } = await import("@/lib/config");
+    resetConfig();
+    const cfg = getConfig();
+
+    expect(cfg.llm.provider).toBe("ollama"); // default preserved
+  });
+
+  it("accepts valid AWAAZTWIN_LLM_PROVIDER values", async () => {
+    process.env.AWAAZTWIN_CONFIG = path.join(tmpDir, "nope.yaml");
+    process.env.AWAAZTWIN_LLM_PROVIDER = "openai";
+
+    const { getConfig, resetConfig } = await import("@/lib/config");
+    resetConfig();
+    const cfg = getConfig();
+
+    expect(cfg.llm.provider).toBe("openai");
+  });
+
+  it("handles port=0 and NaN numeric env vars correctly", async () => {
+    process.env.AWAAZTWIN_CONFIG = path.join(tmpDir, "nope.yaml");
+    process.env.AWAAZTWIN_SERVER_PORT = "0";
+    process.env.AWAAZTWIN_LLM_MAX_TOKENS = "not-a-number";
+    process.env.AWAAZTWIN_LLM_TEMPERATURE = "abc";
+
+    const { getConfig, resetConfig } = await import("@/lib/config");
+    resetConfig();
+    const cfg = getConfig();
+
+    expect(cfg.server.port).toBe(0); // 0 is a valid finite number
+    expect(cfg.llm.maxTokens).toBe(2048); // NaN ignored → default
+    expect(cfg.llm.temperature).toBe(0.7); // NaN ignored → default
+  });
 });

@@ -13,6 +13,14 @@ import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { parse as parseYaml } from "yaml";
 
+const VALID_LLM_PROVIDERS = new Set<LLMConfig["provider"]>([
+  "ollama",
+  "llama-cpp",
+  "openai",
+  "azure",
+  "custom",
+]);
+
 // ── Config types ─────────────────────────────────────────────────────
 
 export interface ServerConfig {
@@ -144,22 +152,35 @@ function applyEnvOverrides(cfg: AwaazTwinConfig): AwaazTwinConfig {
   if (e.AWAAZTWIN_ENV) cfg.env = e.AWAAZTWIN_ENV;
 
   if (e.AWAAZTWIN_SERVER_HOST) cfg.server.host = e.AWAAZTWIN_SERVER_HOST;
-  if (e.AWAAZTWIN_SERVER_PORT)
-    cfg.server.port = parseInt(e.AWAAZTWIN_SERVER_PORT, 10) || cfg.server.port;
+  if (e.AWAAZTWIN_SERVER_PORT) {
+    const parsed = parseInt(e.AWAAZTWIN_SERVER_PORT, 10);
+    if (Number.isFinite(parsed)) cfg.server.port = parsed;
+  }
   if (e.AWAAZTWIN_SERVER_BASE_URL)
     cfg.server.baseUrl = e.AWAAZTWIN_SERVER_BASE_URL;
 
-  if (e.AWAAZTWIN_LLM_PROVIDER)
-    cfg.llm.provider = e.AWAAZTWIN_LLM_PROVIDER as LLMConfig["provider"];
+  if (e.AWAAZTWIN_LLM_PROVIDER) {
+    const p = e.AWAAZTWIN_LLM_PROVIDER;
+    if (VALID_LLM_PROVIDERS.has(p as LLMConfig["provider"])) {
+      cfg.llm.provider = p as LLMConfig["provider"];
+    } else {
+      console.warn(
+        `[config] Ignoring invalid AWAAZTWIN_LLM_PROVIDER="${p}". ` +
+          `Valid values: ${[...VALID_LLM_PROVIDERS].join(", ")}`,
+      );
+    }
+  }
   if (e.AWAAZTWIN_LLM_BASE_URL) cfg.llm.baseUrl = e.AWAAZTWIN_LLM_BASE_URL;
   if (e.AWAAZTWIN_LLM_MODEL) cfg.llm.model = e.AWAAZTWIN_LLM_MODEL;
   if (e.AWAAZTWIN_LLM_API_KEY) cfg.llm.apiKey = e.AWAAZTWIN_LLM_API_KEY;
-  if (e.AWAAZTWIN_LLM_MAX_TOKENS)
-    cfg.llm.maxTokens =
-      parseInt(e.AWAAZTWIN_LLM_MAX_TOKENS, 10) || cfg.llm.maxTokens;
-  if (e.AWAAZTWIN_LLM_TEMPERATURE)
-    cfg.llm.temperature =
-      parseFloat(e.AWAAZTWIN_LLM_TEMPERATURE) ?? cfg.llm.temperature;
+  if (e.AWAAZTWIN_LLM_MAX_TOKENS) {
+    const parsed = parseInt(e.AWAAZTWIN_LLM_MAX_TOKENS, 10);
+    if (Number.isFinite(parsed)) cfg.llm.maxTokens = parsed;
+  }
+  if (e.AWAAZTWIN_LLM_TEMPERATURE) {
+    const parsed = parseFloat(e.AWAAZTWIN_LLM_TEMPERATURE);
+    if (Number.isFinite(parsed)) cfg.llm.temperature = parsed;
+  }
 
   if (e.AWAAZTWIN_TTS_SERVER_URL)
     cfg.tts.serverUrl = e.AWAAZTWIN_TTS_SERVER_URL;
