@@ -1,102 +1,92 @@
-# AwaazTwin – Windows development environment setup (PowerShell)
-#
-# Usage:  .\scripts\setup_windows.ps1
-#
-# Prerequisites: Windows 10/11 with PowerShell 5.1+
+# ---------------------------------------------------------------------------
+# AwaazTwin – Windows Development Setup (PowerShell)
+# Installs Python, ffmpeg, and sets up a virtual environment for local dev.
 # Safe to re-run (idempotent).
+# Run: powershell -ExecutionPolicy Bypass -File scripts\setup_windows.ps1
+# ---------------------------------------------------------------------------
 
 $ErrorActionPreference = "Stop"
 
-function Info($msg)  { Write-Host "-> $msg" -ForegroundColor Cyan }
-function Ok($msg)    { Write-Host "[OK] $msg" -ForegroundColor Green }
-function Warn($msg)  { Write-Host "[!] $msg" -ForegroundColor Yellow }
+Write-Host "=== AwaazTwin Windows Setup ===" -ForegroundColor Cyan
 
-# ── Check for winget ──────────────────────────────────────────────────
-$hasWinget = [bool](Get-Command winget -ErrorAction SilentlyContinue)
-if (-not $hasWinget) {
-    Warn "winget is not available on this system."
-    Warn "Install it from https://aka.ms/getwinget or use the Microsoft Store."
-    Warn "The script will skip automated package installs and provide manual links instead."
+# ---- Python ----
+$pythonCmd = Get-Command python -ErrorAction SilentlyContinue
+if (-not $pythonCmd) {
+    Write-Host "Python not found. Please install Python 3.11+ from https://www.python.org/downloads/" -ForegroundColor Red
+    Write-Host "Make sure to check 'Add Python to PATH' during installation."
+    exit 1
 }
 
-# ── Node.js ───────────────────────────────────────────────────────────
-if (Get-Command node -ErrorAction SilentlyContinue) {
-    $nodeVer = & node -v
-    Ok "Node.js $nodeVer already installed"
-} elseif ($hasWinget) {
-    Info "Node.js not found. Installing via winget..."
-    winget install --id OpenJS.NodeJS.LTS --accept-package-agreements --accept-source-agreements
-    if ($LASTEXITCODE -ne 0) {
-        Warn "winget install failed. Download Node.js manually: https://nodejs.org"
-    } else {
-        Ok "Node.js installed"
-        if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-            Warn "Node.js was installed but is not yet available in this session."
-            Warn "Please restart your terminal and re-run this script."
-            exit 0
-        }
-    }
+$pyVersion = & python --version 2>&1
+Write-Host "✓ $pyVersion available" -ForegroundColor Green
+
+# ---- ffmpeg ----
+$ffmpegCmd = Get-Command ffmpeg -ErrorAction SilentlyContinue
+if (-not $ffmpegCmd) {
+    Write-Host "ffmpeg not found." -ForegroundColor Yellow
+    Write-Host "Install via winget:  winget install ffmpeg"
+    Write-Host "Or download from: https://ffmpeg.org/download.html"
+    Write-Host "Continuing without ffmpeg (audio conversion will not work)..."
 } else {
-    Warn "Node.js not found. Install it from https://nodejs.org"
+    Write-Host "✓ ffmpeg already installed" -ForegroundColor Green
 }
 
-# ── ffmpeg ────────────────────────────────────────────────────────────
-if (Get-Command ffmpeg -ErrorAction SilentlyContinue) {
-    Ok "ffmpeg already installed"
-} elseif ($hasWinget) {
-    Info "Installing ffmpeg via winget..."
-    winget install --id Gyan.FFmpeg --accept-package-agreements --accept-source-agreements
-    if ($LASTEXITCODE -ne 0) {
-        Warn "winget install failed. Download ffmpeg manually: https://ffmpeg.org/download.html"
-    } else {
-        Ok "ffmpeg installed"
-    }
+# ---- Node.js ----
+$nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+if (-not $nodeCmd) {
+    Write-Host "Node.js not found." -ForegroundColor Yellow
+    Write-Host "Install via winget:  winget install OpenJS.NodeJS.LTS"
+    Write-Host "Or download from: https://nodejs.org/"
 } else {
-    Warn "ffmpeg not found. Download it from https://ffmpeg.org/download.html"
+    $nodeVersion = & node --version 2>&1
+    Write-Host "✓ Node.js $nodeVersion available" -ForegroundColor Green
 }
 
-# ── Docker ────────────────────────────────────────────────────────────
-if (Get-Command docker -ErrorAction SilentlyContinue) {
-    $dockerVer = & docker --version
-    Ok "Docker available: $dockerVer"
+# ---- Virtual environment ----
+$venvDir = ".venv"
+if (-not (Test-Path $venvDir)) {
+    Write-Host "Creating Python virtual environment..."
+    & python -m venv $venvDir
 } else {
-    Warn "Docker not found. Coqui TTS runs in Docker."
-    Warn "Install Docker Desktop: https://www.docker.com/products/docker-desktop"
+    Write-Host "✓ Virtual environment already exists" -ForegroundColor Green
 }
 
-# ── Install portal dependencies ───────────────────────────────────────
-$portalDir = Join-Path $PSScriptRoot "..\apps\portal"
-if (Test-Path $portalDir) {
-    if (Get-Command npm -ErrorAction SilentlyContinue) {
-        Info "Installing portal dependencies..."
-        Push-Location $portalDir
-        try {
-            npm install
-            Ok "Portal dependencies installed"
-        } catch {
-            Warn "npm install failed: $($_.Exception.Message)"
-            Warn "You can manually run 'npm install' in $portalDir after resolving the issue."
-        } finally {
-            Pop-Location
-        }
-    } else {
-        Warn "npm not found. Skipping portal dependency installation."
-        Warn "Install Node.js/npm from https://nodejs.org and then run 'npm install' in $portalDir."
-    }
-} else {
-    Warn "Portal directory not found at $portalDir"
-}
+Write-Host "Activating virtual environment and installing dependencies..."
+& "$venvDir\Scripts\Activate.ps1"
+& pip install --upgrade pip
+& pip install -e ".[dev]"
 
-# ── Summary ───────────────────────────────────────────────────────────
+# ---- Detect CUDA ----
+$device = "cpu"
+try {
+    $device = & python -c @"
+try:
+    import torch
+    if torch.cuda.is_available():
+        print('cuda')
+    else:
+        print('cpu')
+except ImportError:
+    print('cpu')
+"@
+} catch {
+    $device = "cpu"
+}
+Write-Host "Detected compute device: $device" -ForegroundColor Cyan
+
 Write-Host ""
-Write-Host "============================================"
-Write-Host "  AwaazTwin - Windows setup complete"
-Write-Host "============================================"
+Write-Host "=== Setup Complete ===" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  Next steps:"
-Write-Host "    1. cd apps\portal; npm run dev        # Start the portal"
-Write-Host "    2. Install Ollama: https://ollama.ai"
-Write-Host "       ollama pull llama3.2               # Download a model"
-Write-Host "    3. (Optional) Start Coqui TTS:"
-Write-Host "       docker compose up coqui-tts -d"
+Write-Host "Next steps:"
+Write-Host "  1. Activate venv:     .venv\Scripts\Activate.ps1"
+Write-Host "  2. Start Postgres:    docker run -d --name awaaztwin-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=awaaztwin -p 5432:5432 postgres:16-alpine"
+Write-Host "  3. Start Redis:       docker run -d --name awaaztwin-redis -p 6379:6379 redis:7-alpine"
+Write-Host "  4. Start MinIO:       docker run -d --name awaaztwin-minio -p 9000:9000 -p 9001:9001 minio/minio server /data --console-address :9001"
+Write-Host "  5. Copy config:       Copy-Item awaaztwin.example.yaml awaaztwin.yaml"
+Write-Host "  6. Run backend:       uvicorn backend.main:app --reload"
+Write-Host "  7. Run portal:        cd apps\portal; npm install; npm run dev"
+Write-Host "  8. Device detected:   $device (set AWAAZTWIN_DEVICE to override)"
 Write-Host ""
+Write-Host "For GPU support:" -ForegroundColor Yellow
+Write-Host "  - Install NVIDIA CUDA toolkit from https://developer.nvidia.com/cuda-downloads"
+Write-Host "  - Install PyTorch with CUDA: pip install torch --index-url https://download.pytorch.org/whl/cu121"

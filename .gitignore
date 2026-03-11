@@ -7,3 +7,22 @@ dist/
 test-results/
 playwright-report/
 awaaztwin.yaml
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.eggs/
+*.whl
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.so
+
+# Local data
+.data/

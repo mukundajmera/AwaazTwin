@@ -1,83 +1,145 @@
-# AwaazTwin – Docker Compose for local deployment
-#
-# Usage:
-#   docker compose up -d          # start all services
-#   docker compose logs -f        # follow logs
-#
-# GPU support for TTS (requires NVIDIA Container Toolkit):
-#   docker compose --profile gpu up -d
-#
-# Prerequisites:
-#   - Docker Engine 24+ with Compose V2
-#   - (Optional) NVIDIA drivers + NVIDIA Container Toolkit for GPU TTS
+x-backend-common: &backend-common
+  build:
+    context: .
+    dockerfile: infra/docker/Dockerfile.backend
+  env_file: .env
+  restart: unless-stopped
+  networks:
+    - awaaztwin
+  volumes:
+    - models:/app/models
 
 services:
-  # ── AwaazTwin Portal (Next.js) ──────────────────────────────────────
+  # ---------- Backend API ----------
+  api:
+    <<: *backend-common
+    container_name: awaaztwin-api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    # Uncomment below for GPU support (requires nvidia-container-toolkit)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # ---------- Workers ----------
+  worker_voice_prep:
+    <<: *backend-common
+    container_name: awaaztwin-worker-voice-prep
+    command: ["python", "-m", "rq.cli", "worker", "voice-prep", "--url", "${AWAAZTWIN_REDIS_URL:-redis://redis:6379/0}"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  worker_synthesis:
+    <<: *backend-common
+    container_name: awaaztwin-worker-synthesis
+    command: ["python", "-m", "rq.cli", "worker", "synthesis", "--url", "${AWAAZTWIN_REDIS_URL:-redis://redis:6379/0}"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # ---------- Frontend ----------
   portal:
     build:
-      context: ./apps/portal
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: infra/docker/Dockerfile.portal
+    container_name: awaaztwin-portal
     ports:
       - "${PORTAL_PORT:-3000}:3000"
     environment:
-      - NODE_ENV=production
-      - AWAAZTWIN_LLM_BASE_URL=${AWAAZTWIN_LLM_BASE_URL:-http://ollama:11434}
-      - AWAAZTWIN_LLM_MODEL=${AWAAZTWIN_LLM_MODEL:-llama3.2}
-      - AWAAZTWIN_TTS_SERVER_URL=${AWAAZTWIN_TTS_SERVER_URL:-http://coqui-tts:5002}
+      - NEXT_PUBLIC_API_URL=http://api:8000
     restart: unless-stopped
     networks:
       - awaaztwin
+    depends_on:
+      - api
 
-  # ── Ollama (LLM Backend – CPU) ─────────────────────────────────────
-  ollama:
-    image: ollama/ollama:0.6.2
-    ports:
-      - "${OLLAMA_PORT:-11434}:11434"
+  # ---------- Data stores ----------
+  postgres:
+    image: postgres:16-alpine
+    container_name: awaaztwin-postgres
+    env_file: .env
+    environment:
+      POSTGRES_DB: awaaztwin
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
-      - ollama_data:/root/.ollama
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d awaaztwin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
     networks:
       - awaaztwin
 
-  # ── Coqui TTS (CPU mode, default) ─────────────────────────────────
-  coqui-tts:
-    image: ghcr.io/coqui-ai/tts:v0.22.0
+  redis:
+    image: redis:7-alpine
+    container_name: awaaztwin-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - awaaztwin
+
+  minio:
+    image: minio/minio
+    container_name: awaaztwin-minio
+    command: server /data --console-address ":9001"
     ports:
-      - "${TTS_PORT:-5002}:5002"
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
-      - tts_models:/root/.local/share/tts
-    entrypoint: ["python3", "-m", "TTS.server.server", "--port", "5002"]
+      - minio_data:/data
     restart: unless-stopped
     networks:
       - awaaztwin
-
-  # ── Coqui TTS (GPU mode – requires NVIDIA Container Toolkit) ──────
-  coqui-tts-gpu:
-    image: ghcr.io/coqui-ai/tts:v0.22.0
-    profiles:
-      - gpu
-    ports:
-      - "${TTS_GPU_PORT:-5003}:5002"
-    volumes:
-      - tts_models:/root/.local/share/tts
-    entrypoint: ["python3", "-m", "TTS.server.server", "--port", "5002", "--use_cuda", "true"]
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    restart: unless-stopped
-    networks:
-      - awaaztwin
-
-volumes:
-  ollama_data:
-    driver: local
-  tts_models:
-    driver: local
 
 networks:
   awaaztwin:
     driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
+  models:

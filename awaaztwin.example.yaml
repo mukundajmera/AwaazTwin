@@ -1,27 +1,38 @@
-# AwaazTwin – Configuration
-#
-# Copy to `awaaztwin.yaml` in the project root and customise.
-# Environment variables (AWAAZTWIN_*) override values in this file.
-
-env: local  # local | staging | production
+# AwaazTwin configuration
+# Copy to awaaztwin.yaml and adjust values for your environment.
 
 server:
-  host: 0.0.0.0
-  port: 3000
-  baseUrl: http://localhost:3000
+  host: "0.0.0.0"
+  port: 8000
+  reload: false
+  log_level: "info"
 
-llm:
-  provider: ollama          # ollama | llama-cpp | openai | azure | custom
-  baseUrl: http://localhost:11434
-  model: llama3.2
-  # apiKey: sk-...          # uncomment for cloud providers
-  maxTokens: 2048
-  temperature: 0.7
+database:
+  url: "postgresql+asyncpg://postgres:postgres@localhost:5432/awaaztwin"
 
-tts:
-  serverUrl: http://localhost:5002
-  enabled: false            # set to true once Coqui TTS is running
+redis:
+  url: "redis://localhost:6379/0"
+
+storage:
+  endpoint: "http://localhost:9000"
+  access_key: "minioadmin"
+  secret_key: "minioadmin"
+  bucket: "awaaztwin"
+  region: "us-east-1"
+  secure: false
+
+engines:
+  - name: "xtts-hindi"
+    enabled: true
+    device: "auto"          # auto-detects cuda > mps > cpu
+    options: {}
+  - name: "openvoice"
+    enabled: false
+    device: "auto"
+    options: {}
 
 limits:
-  maxJobsPerMinute: 30
-  maxAudioMinutesPerMonth: 200
+  max_samples_per_voice: 10
+  max_sample_size_mb: 50
+  max_text_length: 5000
+  max_concurrent_jobs: 4

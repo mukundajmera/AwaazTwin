@@ -1,78 +1,91 @@
 #!/usr/bin/env bash
-# AwaazTwin – macOS development environment setup
-#
-# Usage:  chmod +x scripts/setup_macos.sh && ./scripts/setup_macos.sh
-#
-# Prerequisites: macOS with admin access. The script uses Homebrew.
+# ---------------------------------------------------------------------------
+# AwaazTwin – macOS Development Setup
+# Installs Python, ffmpeg, Redis, and sets up a virtualenv for local dev.
 # Safe to re-run (idempotent).
-
+# ---------------------------------------------------------------------------
 set -euo pipefail
 
-info()  { printf "\033[1;34m→ %s\033[0m\n" "$*"; }
-ok()    { printf "\033[1;32m✔ %s\033[0m\n" "$*"; }
-warn()  { printf "\033[1;33m⚠ %s\033[0m\n" "$*"; }
+echo "=== AwaazTwin macOS Setup ==="
 
-# ── Homebrew ──────────────────────────────────────────────────────────
+# ---- Homebrew ----
 if ! command -v brew &>/dev/null; then
-  info "Installing Homebrew…"
+  echo "Installing Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 else
-  ok "Homebrew already installed"
+  echo "✓ Homebrew already installed"
 fi
 
-# ── Node.js ───────────────────────────────────────────────────────────
-if ! command -v node &>/dev/null; then
-  info "Installing Node.js 20 via Homebrew…"
-  brew install node@20
-  brew link --overwrite node@20
+# ---- Python ----
+if ! command -v python3 &>/dev/null || [[ "$(python3 -c 'import sys; print(sys.version_info >= (3,11))')" != "True" ]]; then
+  echo "Installing Python 3.11+..."
+  brew install python@3.11
 else
-  ok "Node.js $(node -v) already installed"
+  echo "✓ Python $(python3 --version) available"
 fi
 
-# ── ffmpeg (used by TTS pipelines for audio conversion) ───────────────
+# ---- ffmpeg ----
 if ! command -v ffmpeg &>/dev/null; then
-  info "Installing ffmpeg…"
+  echo "Installing ffmpeg..."
   brew install ffmpeg
 else
-  ok "ffmpeg already installed"
+  echo "✓ ffmpeg already installed"
 fi
 
-# ── Docker (optional, for Coqui TTS) ─────────────────────────────────
-if ! command -v docker &>/dev/null; then
-  warn "Docker not found. Coqui TTS runs in Docker."
-  warn "Install Docker Desktop from https://www.docker.com/products/docker-desktop"
+# ---- Redis ----
+if ! command -v redis-server &>/dev/null; then
+  echo "Installing Redis..."
+  brew install redis
 else
-  ok "Docker $(docker --version | awk '{print $3}') available"
+  echo "✓ Redis already installed"
 fi
 
-# ── Detect Apple Silicon MPS support ─────────────────────────────────
-DEVICE="cpu"
-if python3 -c "import torch; print(torch.backends.mps.is_available())" 2>/dev/null | grep -q True; then
-  DEVICE="mps"
-  ok "PyTorch MPS backend available – using MPS for local inference"
+# ---- Node.js (for portal) ----
+if ! command -v node &>/dev/null; then
+  echo "Installing Node.js..."
+  brew install node
 else
-  info "MPS not detected or PyTorch not installed – defaulting to CPU"
+  echo "✓ Node.js $(node --version) available"
 fi
+
+# ---- Virtual environment ----
+VENV_DIR=".venv"
+if [ ! -d "$VENV_DIR" ]; then
+  echo "Creating Python virtual environment..."
+  python3 -m venv "$VENV_DIR"
+else
+  echo "✓ Virtual environment already exists"
+fi
+
+echo "Activating virtual environment and installing dependencies..."
+# shellcheck disable=SC1091
+source "$VENV_DIR/bin/activate"
+pip install --upgrade pip
+pip install -e ".[dev]"
+
+# ---- Detect PyTorch MPS ----
+DEVICE=$(python3 -c "
+try:
+    import torch
+    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        print('mps')
+    else:
+        print('cpu')
+except ImportError:
+    print('cpu')
+")
+echo "Detected compute device: $DEVICE"
 export AWAAZTWIN_DEVICE="$DEVICE"
 
-# ── Install portal dependencies ───────────────────────────────────────
-info "Installing portal dependencies…"
-cd "$(dirname "$0")/../apps/portal"
-npm install
-ok "Portal dependencies installed"
-
-# ── Summary ───────────────────────────────────────────────────────────
 echo ""
-echo "============================================"
-echo "  AwaazTwin – macOS setup complete"
-echo "============================================"
+echo "=== Setup Complete ==="
 echo ""
-echo "  Device: $DEVICE"
-echo ""
-echo "  Next steps:"
-echo "    1. cd apps/portal && npm run dev    # Start the portal"
-echo "    2. Install Ollama: https://ollama.ai"
-echo "       ollama pull llama3.2             # Download a model"
-echo "    3. (Optional) Start Coqui TTS:"
-echo "       docker compose up coqui-tts -d"
-echo ""
+echo "Next steps:"
+echo "  1. Activate the venv:   source .venv/bin/activate"
+echo "  2. Start Redis:         brew services start redis"
+echo "  3. Start Postgres:      docker run -d --name awaaztwin-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=awaaztwin -p 5432:5432 postgres:16-alpine"
+echo "  4. Start MinIO:         docker run -d --name awaaztwin-minio -p 9000:9000 -p 9001:9001 minio/minio server /data --console-address :9001"
+echo "  5. Copy config:         cp awaaztwin.example.yaml awaaztwin.yaml"
+echo "  6. Run backend:         uvicorn backend.main:app --reload"
+echo "  7. Run portal:          cd apps/portal && npm install && npm run dev"
+echo "  8. Device detected:     $DEVICE (set AWAAZTWIN_DEVICE to override)"

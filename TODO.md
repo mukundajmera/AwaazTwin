@@ -71,7 +71,7 @@
 - [x] Implement Test Console / Diagnostics page
 - [x] Create stubbed API route handlers (`/api/llm/test-connection`, `/api/tts/test-connection`, `/api/tests/run`)
 - [x] Write unit, integration, and E2E tests for all MVP features
-- [x] Set up CI/CD pipeline (GitHub Actions)
+- [ ] Set up CI/CD pipeline (GitHub Actions)
 
 ### Phase 4 – Content & Practice Flows
 - [x] Create content for all sections (Voice Cloning Guides, TTS Tutorials, Model Selection, Audio Processing Workflows, etc.)
@@ -90,5 +90,21 @@
 - [x] Create UAT checklist view in the portal
 - [x] Write comprehensive Playwright UAT scenarios (content browsing, LLM query, TTS generation, full practice session)
 - [ ] Performance testing on CPU-only machines
-- [x] Security review (API key handling, input sanitization, CORS)
-- [x] Documentation for local development setup and deployment
+- [ ] Security review (API key handling, input sanitization, CORS)
+- [ ] Documentation for local development setup and deployment
+
+### instruction_2.md – Backend Engine & Worker Implementation
+- [x] Phase 3: Engine abstraction layer (`backend/engines/`)
+  - [x] `EngineAdapter` ABC with `prepare_voice` and `synthesize` methods
+  - [x] `VoiceEmbeddingRef` data structure with JSON serialisation
+  - [x] `EngineConfig` model with env-var and device-auto-detection support
+  - [x] `XTTSHindiEngineAdapter` placeholder (logs + dummy WAV)
+  - [x] `OpenVoiceEngineAdapter` placeholder (logs + dummy WAV)
+  - [x] `get_engine_adapter()` factory method
+  - [x] 18 pytest tests for engine layer
+- [x] Phase 4: Worker and queue implementation (`backend/workers/`)
+  - [x] Celery app with Redis broker and task routing
+  - [x] `voice_prep` queue + `prepare_voice_profile` task
+  - [x] `synthesis` queue + `run_synthesis` task
+  - [x] Logging, retry (max 3), and graceful shutdown
+  - [x] 5 pytest tests for worker tasks
